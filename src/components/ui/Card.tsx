@@ -18,21 +18,27 @@ const accents = {
   info: 'border-info/30',
 };
 
+/** Space-between classes (space-y-6, sm:space-y-4…) only work on the element whose children they space. */
+const isSpacing = (c: string) => /^(?:[a-z]+:)*-?space-[xy]-/.test(c);
+
 export function Card({ padded = true, gradient, glow, to, accent, className, children, onClick, ...rest }: CardProps) {
+  // The children sit inside an inner wrapper (above the glow), so spacing
+  // classes go there; on the outer box they would space the wrapper alone.
+  const own = className?.split(/\s+/).filter(Boolean) ?? [];
   const classes = cn(
     'relative overflow-hidden rounded-2xl border bg-surface shadow-card',
     accent ? accents[accent] : 'border-stroke',
     gradient && 'card-gradient',
     padded && 'p-5',
     (to || onClick) && 'cursor-pointer transition duration-150 hover:-translate-y-px hover:border-gold/35',
-    className,
+    own.filter((c) => !isSpacing(c)).join(' '),
   );
   const inner = (
     <>
       {glow && (
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gold/15 blur-3xl" />
       )}
-      <div className="relative">{children}</div>
+      <div className={cn('relative', own.filter(isSpacing).join(' '))}>{children}</div>
     </>
   );
   if (to) {

@@ -81,6 +81,7 @@ export default function PayIn() {
             <ChoiceTiles<DepositPurpose>
               value={purpose}
               onChange={setPurpose}
+              columns={2}
               options={[
                 { value: 'WALLET', label: 'Fund my wallet', sub: 'Save, join a circle, or keep it' },
                 { value: 'LOAN_REPAYMENT', label: 'Repay a loan', sub: 'Applied to the loan at once' },
@@ -129,7 +130,7 @@ export default function PayIn() {
             Continue to Paystack
           </Button>
 
-          <div className="grid gap-3 text-[12.5px] text-ink-3 sm:grid-cols-3">
+          <div className="grid gap-3 border-t border-stroke pt-5 text-[12.5px] text-ink-3 sm:grid-cols-3">
             <Point icon={<ShieldCheck className="h-4 w-4" />} text="Card details go to Paystack, never to Kudi9ja." />
             <Point icon={<CreditCard className="h-4 w-4" />} text="Card, bank transfer, USSD or bank app." />
             <Point icon={<WalletIcon className="h-4 w-4" />} text="Credited the moment Paystack confirms it." />
