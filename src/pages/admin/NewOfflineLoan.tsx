@@ -58,8 +58,8 @@ export default function NewOfflineLoan() {
     principal: '', tenureMonths: '6', ratePct: '25', processingFee: '', feePct: '', purpose: '', disbursedAt: isoDate(new Date()), amountRepaid: '',
     payoutBank: '', payoutAccountNumber: '', notes: '',
   });
-  const [chosen, setChosen] = useState<RepaymentFrequency | null>(null);
-  const frequency: RepaymentFrequency = chosen ?? 'WEEKLY';
+  const [chosen, setChosen] = useState<RepaymentFrequency | null>('MONTHLY');
+  const frequency: RepaymentFrequency = chosen ?? 'MONTHLY';
   const [guarantors, setGuarantors] = useState<OfflineGuarantor[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [docs, setDocs] = useState<PendingDoc[]>([]);
@@ -221,7 +221,7 @@ export default function NewOfflineLoan() {
                   options={offered.map((f) => ({ value: f, label: f === 'WEEKLY' ? 'Weekly' : 'Monthly' }))}
                 />
                 <p className="mt-1.5 text-[12px] text-ink-3">
-                  {chosen ? (months > 0 ? `${count} ${chosen === 'WEEKLY' ? 'weekly' : 'monthly'} payments` : '') : 'Choose weekly or monthly. Shown weekly until you do.'}
+                  {chosen ? (months > 0 ? `${count} ${chosen === 'WEEKLY' ? `weekly payments over ${count} weeks (${months} month${months === 1 ? '' : 's'})` : 'monthly payments'}` : '') : 'Choose weekly or monthly.'}
                 </p>
               </div>
               <Input label="Flat interest, % of the loan *" type="number" min={0} step="0.5" value={f.ratePct} onChange={(e) => set('ratePct')(e.target.value)} hint="Charged once over the whole term" />

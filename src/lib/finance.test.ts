@@ -9,7 +9,10 @@ import {
   loanPreview,
   loanRateFor,
   loanRateRange,
+  loanLength,
+  loanLengthDetail,
   processingFee,
+  termPhrase,
   rateFromTable,
   savingsInterest,
   targetPerDeposit,
@@ -283,5 +286,14 @@ describe('weekly or monthly, with 2% on each repayment', () => {
     const p = loanPreview(S, 100_000, 3, 'WEEKLY', start);
     expect(rows.reduce((s, r) => s + r.amount, 0)).toBe(p.total);
     expect(p.total).toBe(125_000 + p.fees);
+  });
+
+  it('states a weekly loan in weeks and a monthly one in months', () => {
+    const start = new Date(2026, 0, 15);
+    expect(loanLength('MONTHLY', 12)).toBe('12 months');
+    expect(loanLength('WEEKLY', 3, undefined, start)).toBe('12 weeks');
+    expect(loanLength('WEEKLY', 12, 52)).toBe('52 weeks');
+    expect(loanLengthDetail('WEEKLY', 12, 52)).toBe('52 weeks (12 months)');
+    expect(termPhrase(6, 'WEEKLY', 26)).toBe('26 weeks, repaid weekly');
   });
 });

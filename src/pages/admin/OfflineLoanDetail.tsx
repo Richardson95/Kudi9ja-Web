@@ -99,7 +99,7 @@ export default function OfflineLoanDetail() {
         backLabel="Customers"
         eyebrow="Offline loan"
         title={l.fullName}
-        subtitle={`${naira(l.principal)} · ${termPhrase(l.tenureMonths, l.repaymentFrequency)} · ${l.purpose}`}
+        subtitle={`${naira(l.principal)} · ${termPhrase(l.tenureMonths, l.repaymentFrequency, l.installmentCount)} · ${l.purpose}`}
         actions={
           <>
             <Pill tone={activated ? 'success' : 'info'}>{activated ? 'Signed up' : 'Not activated yet'}</Pill>

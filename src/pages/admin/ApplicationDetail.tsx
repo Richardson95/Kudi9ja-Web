@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction';
 import { keys, useRefresh } from '../../hooks/queries';
 import { adminApi } from '../../lib/api/endpoints';
 import { asDay, asDayTime, naira } from '../../lib/format';
-import { eachInstalment, feeRateLabel, instalmentsPhrase, loanPreview, perInstalment } from '../../lib/finance';
+import { eachInstalment, feeRateLabel, instalmentsPhrase, loanLengthDetail, loanPreview, perInstalment } from '../../lib/finance';
 import { applicationTone, can } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import { useSettings } from '../../state/settings';
@@ -99,7 +99,7 @@ export default function ApplicationDetail() {
           <DetailRows
             rows={[
               ['Amount', naira(a.amount)],
-              ['Term', `${a.tenureMonths} months`],
+              ['Term', loanLengthDetail(p.frequency, a.tenureMonths)],
               ['Priced on', a.groupPricing ? 'Loan group terms' : 'Standard terms'],
               ['Repaid', instalmentsPhrase(p.frequency, a.tenureMonths)],
               ['Purpose', a.purpose],

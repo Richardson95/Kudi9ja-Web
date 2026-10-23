@@ -14,7 +14,7 @@ import { useAction } from '../../../hooks/useAction';
 import { useBorrowerSettings, useEligibility, useRefresh } from '../../../hooks/queries';
 import { loansApi } from '../../../lib/api/endpoints';
 import { cn } from '../../../lib/cn';
-import { eachInstalment, feeRateLabel, instalmentsPhrase, loanPreview } from '../../../lib/finance';
+import { eachInstalment, feeRateLabel, instalmentsPhrase, loanLength, loanLengthDetail, loanPreview } from '../../../lib/finance';
 import { formatAmountInput, months as monthsLabel, naira, parseAmount, rateOf } from '../../../lib/format';
 import { LOAN_PURPOSES, NIGERIAN_STATES } from '../../../lib/validators';
 import type { Guarantor, LoanQuote, RepaymentFrequency } from '../../../types/api';
@@ -47,14 +47,14 @@ export default function LoanApply() {
 
   const [amount, setAmount] = useState('');
   const [term, setTerm] = useState(3);
-  // Nothing is chosen until the customer chooses; until then the figures are
-  // shown weekly. Where only one is offered, that one is the choice.
+  // Monthly unless the customer picks weekly (or monthly is not offered). The
+  // term is chosen in months; weekly divides those months into weeks.
   const offered = (['WEEKLY', 'MONTHLY'] as RepaymentFrequency[]).filter((f) =>
     f === 'WEEKLY' ? s.lending.weeklyAllowed !== false : s.lending.monthlyAllowed !== false,
   );
-  const [picked, setChosen] = useState<RepaymentFrequency | null>(null);
-  const chosen = offered.length === 1 ? offered[0]! : picked && offered.includes(picked) ? picked : null;
-  const frequency: RepaymentFrequency = chosen ?? offered[0] ?? 'WEEKLY';
+  const [picked, setChosen] = useState<RepaymentFrequency>('MONTHLY');
+  const chosen: RepaymentFrequency | null = offered.includes(picked) ? picked : (offered[0] ?? null);
+  const frequency: RepaymentFrequency = chosen ?? 'MONTHLY';
   const [purpose, setPurpose] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessAddress, setBusinessAddress] = useState('');
@@ -122,7 +122,7 @@ export default function LoanApply() {
       amountLabel: 'You are asking for',
       amount: principal,
       details: [
-        ['Over', monthsLabel(term)],
+        ['Over', loanLengthDetail(frequency, term)],
         ['Repaid', instalmentsPhrase(frequency, term)],
         [eachLabel, `${each} (${eachBreakdown})`],
         ['Total to repay', naira(q?.totalRepayable ?? preview.total)],
@@ -178,13 +178,18 @@ export default function LoanApply() {
             <div>
               <div className="mb-2 flex justify-between">
                 <FieldLabel>Over</FieldLabel>
-                <span className="text-sm font-extrabold text-gold">{monthsLabel(term)}</span>
+                <span className="text-sm font-extrabold text-gold">{loanLength(frequency, term)}</span>
               </div>
               <NumberField label="Months" value={term} min={e?.minMonths ?? 1} max={e?.maxMonths ?? s.lending.maxTenureMonths} onChange={setTerm} />
+              {frequency === 'WEEKLY' && term > 0 && (
+                <p className="mt-1.5 text-[12px] text-ink-3">
+                  {monthsLabel(term)} is {loanLength(frequency, term)}.
+                </p>
+              )}
             </div>
             <div>
               <FieldLabel>How often will you repay? *</FieldLabel>
-              <div className={cn('inline-block rounded-2xl', !chosen && 'ring-2 ring-gold/50')}>
+              <div className="inline-block rounded-2xl">
                 <Segmented<RepaymentFrequency | ''>
                   value={chosen ?? ''}
                   onChange={(v) => v && setChosen(v)}
@@ -192,9 +197,7 @@ export default function LoanApply() {
                 />
               </div>
               <p className="mt-1.5 text-[12px] text-ink-3">
-                {chosen
-                  ? `${instalmentsPhrase(frequency, term)}, the first ${frequency === 'WEEKLY' ? 'a week' : 'a month'} after the money reaches your wallet.`
-                  : 'Choose weekly or monthly to continue. The figures below are weekly until you do.'}
+                {`${instalmentsPhrase(frequency, term)}, the first ${frequency === 'WEEKLY' ? 'a week' : 'a month'} after the money reaches your wallet.`}
               </p>
             </div>
             <Select label="What is it for?" placeholder="Choose a purpose" value={purpose} onChange={(ev) => setPurpose(ev.target.value)} options={LOAN_PURPOSES} />
@@ -304,7 +307,7 @@ export default function LoanApply() {
             <DetailRows
               rows={[
                 ['Amount', naira(principal)],
-                ['Over', monthsLabel(term)],
+                ['Over', loanLengthDetail(frequency, term)],
                 ['Repaid', instalmentsPhrase(frequency, term)],
                 ['Purpose', purpose],
                 [eachLabel, `${each} (${eachBreakdown})`],

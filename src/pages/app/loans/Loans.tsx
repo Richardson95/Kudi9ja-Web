@@ -185,7 +185,7 @@ function LoanCard({ loan: l }: { loan: Loan }) {
         <div>
           <p className="font-bold">{l.purpose}</p>
           <p className="text-[12.5px] text-ink-3">
-            {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency)} · {l.flatRateLabel}
+            {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency, l.installmentCount)} · {l.flatRateLabel}
           </p>
         </div>
         <Pill tone={loanTone(l.status)}>{l.statusLabel}</Pill>

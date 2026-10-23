@@ -135,9 +135,27 @@ export const instalmentsPhrase = (frequency: RepaymentFrequency, months: number,
 /** "monthly" or "weekly". */
 export const frequencyWord = (frequency: RepaymentFrequency | undefined) => (frequency === 'WEEKLY' ? 'weekly' : 'monthly');
 
-/** "6 months, repaid monthly" — for list rows. */
-export const termPhrase = (months: number, frequency: RepaymentFrequency | undefined) =>
-  `${months} month${months === 1 ? '' : 's'}, repaid ${frequencyWord(frequency)}`;
+/**
+ * How long a loan runs, in the unit it is repaid in: "12 months", or for a
+ * weekly loan the weeks those months hold, "52 weeks". The term is always
+ * chosen in months; weekly only divides it into weeks. `count` is a loan's
+ * fixed instalment count, when it has one.
+ */
+export function loanLength(frequency: RepaymentFrequency | undefined, months: number, count?: number, start: Date = new Date()): string {
+  if (frequency !== 'WEEKLY') return `${months} month${months === 1 ? '' : 's'}`;
+  const weeks = count ?? instalmentCount('WEEKLY', months, start);
+  return `${weeks} week${weeks === 1 ? '' : 's'}`;
+}
+
+/** "52 weeks (12 months)" for a weekly loan, "12 months" for a monthly one. */
+export function loanLengthDetail(frequency: RepaymentFrequency | undefined, months: number, count?: number): string {
+  const length = loanLength(frequency, months, count);
+  return frequency === 'WEEKLY' ? `${length} (${months} month${months === 1 ? '' : 's'})` : length;
+}
+
+/** "6 months, repaid monthly" or "26 weeks, repaid weekly" — for list rows. */
+export const termPhrase = (months: number, frequency: RepaymentFrequency | undefined, count?: number) =>
+  `${loanLength(frequency, months, count)}, repaid ${frequencyWord(frequency)}`;
 
 /** When the nth instalment (from 1) falls due. */
 export function instalmentDue(frequency: RepaymentFrequency, disbursedAt: Date, n: number): Date {
@@ -176,7 +194,7 @@ export function loanPreview(
   s: PublicSettings,
   principal: number,
   months: number,
-  frequency: RepaymentFrequency = 'WEEKLY',
+  frequency: RepaymentFrequency = 'MONTHLY',
   start: Date = new Date(),
 ): LoanPreview {
   const rate = loanRateFor(s, months);

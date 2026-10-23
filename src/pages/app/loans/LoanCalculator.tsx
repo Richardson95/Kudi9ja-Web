@@ -4,7 +4,7 @@ import { Pill, Segmented } from '../../../components/ui/Bits';
 import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
 import { AmountInput, FieldLabel, NumberField } from '../../../components/ui/Inputs';
-import { eachInstalment, feeBasis, feeRateLabel, instalmentDue, instalmentsPhrase, loanPreview } from '../../../lib/finance';
+import { eachInstalment, feeBasis, feeRateLabel, instalmentDue, instalmentsPhrase, loanLength, loanPreview } from '../../../lib/finance';
 import { asDay, months as monthsLabel, naira, parseAmount, rateOf } from '../../../lib/format';
 import { useBorrowerSettings } from '../../../hooks/queries';
 import type { RepaymentFrequency } from '../../../types/api';
@@ -17,8 +17,8 @@ export default function LoanCalculator() {
   );
   const [amount, setAmount] = useState('200,000');
   const [term, setTerm] = useState(Math.min(6, s.lending.maxTenureMonths));
-  const [picked, setFrequency] = useState<RepaymentFrequency>('WEEKLY');
-  const frequency: RepaymentFrequency = offered.includes(picked) ? picked : (offered[0] ?? 'WEEKLY');
+  const [picked, setFrequency] = useState<RepaymentFrequency>('MONTHLY');
+  const frequency: RepaymentFrequency = offered.includes(picked) ? picked : (offered[0] ?? 'MONTHLY');
   const principal = parseAmount(amount);
   const p = loanPreview(s, principal, term, frequency);
   const outOfRange = principal > 0 && (principal < s.lending.minAmount || principal > s.lending.maxAmount);
@@ -37,9 +37,14 @@ export default function LoanCalculator() {
           <div>
             <div className="mb-2 flex justify-between">
               <FieldLabel>Over</FieldLabel>
-              <span className="text-sm font-extrabold text-gold">{monthsLabel(term)}</span>
+              <span className="text-sm font-extrabold text-gold">{loanLength(frequency, term)}</span>
             </div>
             <NumberField label="Months" value={term} min={1} max={s.lending.maxTenureMonths} onChange={setTerm} />
+            {frequency === 'WEEKLY' && term > 0 && (
+              <p className="mt-1.5 text-[12px] text-ink-3">
+                {monthsLabel(term)} is {loanLength(frequency, term)}.
+              </p>
+            )}
           </div>
           <div>
             <FieldLabel>Repay</FieldLabel>

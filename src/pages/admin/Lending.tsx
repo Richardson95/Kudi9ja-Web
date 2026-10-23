@@ -14,7 +14,7 @@ import { asDay, naira, relative } from '../../lib/format';
 import { applicationTone, can, loanTone } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import type { LoanApplicationStatus, LoanStatus } from '../../types/api';
-import { frequencyWord, termPhrase } from '../../lib/finance';
+import { termPhrase } from '../../lib/finance';
 
 type Tab = 'applications' | 'book' | 'offline';
 
@@ -145,7 +145,7 @@ function Book() {
                     <span className="block font-mono text-[12px] text-ink-3">{l.customerRef}</span>
                   </td>
                   <td className="px-4 py-3 text-[12.5px]">
-                    {naira(l.principal)} · {l.tenureMonths}m {frequencyWord(l.repaymentFrequency)} · {l.purpose}
+                    {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency)} · {l.purpose}
                     <span className="block text-ink-3">due {asDay(l.dueDate)}</span>
                   </td>
                   <td className="num px-4 py-3 text-right text-success">{naira(l.amountRepaid)}</td>
@@ -208,7 +208,7 @@ function Offline() {
                 <div className="min-w-[200px] flex-1">
                   <p className="text-sm font-bold">{l.fullName}</p>
                   <p className="text-[12.5px] text-ink-3">
-                    {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency)} · {l.purpose} · entered {l.importedAt ? asDay(l.importedAt) : ''} by {l.importedBy ?? 'the team'}
+                    {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency, l.installmentCount)} · {l.purpose} · entered {l.importedAt ? asDay(l.importedAt) : ''} by {l.importedBy ?? 'the team'}
                   </p>
                 </div>
                 <p className="num text-sm font-bold">{naira(l.outstanding)} owed</p>
