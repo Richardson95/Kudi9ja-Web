@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
@@ -209,7 +210,7 @@ function TopBar({ supportUnread }: { supportUnread: number }) {
         </Link>
         <AccountMenu />
       </div>
-      {menu && <MobileMenu onClose={() => setMenu(false)} supportUnread={supportUnread} />}
+      {menu && createPortal(<MobileMenu onClose={() => setMenu(false)} supportUnread={supportUnread} />, document.body)}
     </div>
   );
 }

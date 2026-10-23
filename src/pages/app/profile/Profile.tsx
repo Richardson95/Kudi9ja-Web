@@ -29,20 +29,22 @@ export default function Profile() {
       <PageHeader title="Profile" />
 
       <Card gradient glow className="p-6">
-        <div className="flex flex-wrap items-center gap-5">
-          <Avatar name={profile.fullName} size={72} />
-          <div className="min-w-0 flex-1">
-            <p className="text-xl font-extrabold">{profile.fullName}</p>
-            <p className="text-[13px] text-ink-3">{profile.email}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Pill tone="gold">{profile.kycTierLabel}</Pill>
-              {profile.emailVerified && <Pill tone="success" icon={<BadgeCheck className="h-3 w-3" />}>Email verified</Pill>}
-              <span className="flex items-center gap-1 font-mono text-[12.5px] font-bold text-gold">
-                {profile.customerRef} <CopyButton value={profile.customerRef} label="Account number copied" />
-              </span>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
+            <Avatar name={profile.fullName} size={64} />
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-lg font-extrabold leading-tight sm:text-xl">{profile.fullName}</p>
+              <p className="break-all text-[13px] text-ink-3">{profile.email}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Pill tone="gold">{profile.kycTierLabel}</Pill>
+                {profile.emailVerified && <Pill tone="success" icon={<BadgeCheck className="h-3 w-3" />}>Email verified</Pill>}
+                <span className="flex items-center gap-1 whitespace-nowrap font-mono text-[12.5px] font-bold text-gold">
+                  {profile.customerRef} <CopyButton value={profile.customerRef} label="Account number copied" />
+                </span>
+              </div>
             </div>
           </div>
-          <Button variant="ghost" icon={<Pencil className="h-4 w-4" />} onClick={() => setEditing(true)}>
+          <Button variant="ghost" className="w-full sm:w-auto" icon={<Pencil className="h-4 w-4" />} onClick={() => setEditing(true)}>
             Edit details
           </Button>
         </div>

@@ -50,9 +50,20 @@
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;
   }
+  /* The page never scrolls sideways on a phone. `clip`, not `hidden`, so
+     sticky headers keep working. */
+  html,
+  body {
+    overflow-x: clip;
+  }
   body {
     @apply bg-canvas text-ink antialiased;
     font-feature-settings: 'tnum' 0;
+  }
+  /* A grid column may shrink below its content, so a long name or a large
+     figure is cut short inside its card instead of stretching the page. */
+  .grid > * {
+    min-width: 0;
   }
   ::selection {
     background: rgb(var(--gold) / 0.3);
