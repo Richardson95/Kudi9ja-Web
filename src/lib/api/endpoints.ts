@@ -38,6 +38,8 @@ import type {
   LoanApplication,
   LoanApplicationStatus,
   LoanQuote,
+  ExportReport,
+  ExportReportName,
   RepaymentFrequency,
   LoanStatus,
   NotificationPreference,
@@ -463,6 +465,9 @@ export const groupsApi = {
 
 export const adminApi = {
   overview: () => http.get<Overview>('/admin/overview'),
+  /** A report for Excel or PDF. Owners and administrators only; logged. */
+  exportReport: (name: ExportReportName, from?: string, to?: string) =>
+    http.get<ExportReport>(`/admin/exports/${name}`, { from, to }),
   me: () => http.get<TeamMember>('/admin/team/me'),
   audit: (input: { page?: number; size?: number; category?: AuditCategory; query?: string }) =>
     http.get<PageResponse<AuditRow>>('/admin/audit', { page: 0, size: 100, ...input }),

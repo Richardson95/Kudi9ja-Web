@@ -61,6 +61,8 @@ export const can = {
   manageTeam: (r: AdminRole | null) => r === 'OWNER',
   /** Anyone on the panel, whatever their role, answers Help & complaints. */
   answerSupport: (r: AdminRole | null) => !!r,
+  /** Bulk copies of customers' data: owners and administrators. */
+  exportReports: (r: AdminRole | null) => r === 'OWNER' || r === 'ADMIN',
 };
 
 export const CAPABILITIES: { label: string; held: (r: AdminRole) => boolean }[] = [
@@ -71,6 +73,7 @@ export const CAPABILITIES: { label: string; held: (r: AdminRole) => boolean }[] 
   { label: 'Act on loans — remind, record repayments, write off', held: (r) => can.actOnLoans(r) },
   { label: 'Flag or freeze a customer', held: (r) => can.manageCustomers(r) },
   { label: 'Change rates, limits and switches', held: (r) => can.editSettings(r) },
+  { label: 'Download reports (Excel and PDF)', held: (r) => can.exportReports(r) },
   { label: 'Add, promote, suspend or remove admins', held: (r) => can.manageTeam(r) },
 ];
 

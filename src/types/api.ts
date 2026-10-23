@@ -616,6 +616,23 @@ export interface ReviewSummary {
 
 // ── Reference data ──────────────────────────────────────────────────────────
 
+/** A report to download: which one, its columns, and rows of cells in the same order. */
+export type ExportReportName = 'customers' | 'loans' | 'repayments' | 'transactions' | 'paystack' | 'withdrawals' | 'applications';
+export type ExportCell = string | number | null;
+export interface ExportColumn {
+  label: string;
+  type: 'TEXT' | 'MONEY' | 'NUMBER' | 'DATE';
+}
+export interface ExportReport {
+  title: string;
+  period: string;
+  generatedAt: ISODate;
+  generatedBy: string;
+  company: string;
+  columns: ExportColumn[];
+  rows: ExportCell[][];
+}
+
 /** Everything that prices a loan: the standard set, or the loan-group set. */
 export interface LendingTerms {
   rates: Record<string, number>;

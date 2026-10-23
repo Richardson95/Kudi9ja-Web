@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowLeftRight, ArrowUpRight, ClipboardList, Gauge, History, Menu, MessagesSquare, SlidersHorizontal, UsersRound, UserCog, Users, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowUpRight, ClipboardList, FileDown, Gauge, History, Menu, MessagesSquare, SlidersHorizontal, UsersRound, UserCog, Users, X } from 'lucide-react';
 import { BrandMark } from '../components/Brand';
 import { Pill } from '../components/ui/Bits';
 import { useAdminApplications, useOverview } from '../hooks/queries';
@@ -34,6 +34,7 @@ export function AdminLayout() {
     { to: '/admin/support', label: 'Support', icon: MessagesSquare, badge: waitingOnTeam },
     { to: '/admin/controls', label: 'Controls', icon: SlidersHorizontal },
     { to: '/admin/team', label: 'Team', icon: UserCog },
+    { to: '/admin/reports', label: 'Reports', icon: FileDown },
     { to: '/admin/audit', label: 'Audit log', icon: History },
   ];
 
