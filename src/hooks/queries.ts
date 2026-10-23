@@ -11,7 +11,7 @@ import {
   savingsApi,
   walletApi,
 } from '../lib/api/endpoints';
-import type { PaystackStatus, DepositStatus, LegalKind, LoanApplicationStatus, LoanStatus, TxFilter, WithdrawalStatus, AccountStatus, AuditCategory, PublicSettings } from '../types/api';
+import type { PaystackStatus, DepositStatus, LegalKind, LoanApplicationStatus, LoanStatus, TxFilter, WithdrawalStatus, AccountStatus, AuditCategory, PublicSettings, RepaymentSource } from '../types/api';
 import { useSession } from '../state/session';
 import { useSettings } from '../state/settings';
 
@@ -63,6 +63,7 @@ export const keys = {
     groups: ['admin', 'groups'] as const,
     group: (id: string) => ['admin', 'groups', id] as const,
     audit: (category: string, q: string) => ['admin', 'audit', category, q] as const,
+    repayments: (filters: object) => ['admin', 'repayments', filters] as const,
   },
 };
 
@@ -238,6 +239,22 @@ export const useAudit = (category: AuditCategory | 'ALL', query: string) =>
   useQuery({
     queryKey: keys.admin.audit(category, query),
     queryFn: () => adminApi.audit({ category: category === 'ALL' ? undefined : category, query: query || undefined, size: 200 }),
+    enabled: useAdminEnabled(),
+    placeholderData: (prev) => prev,
+  });
+
+export const useAdminRepayments = (filters: { page: number; query: string; source: RepaymentSource | 'ALL'; from: string; to: string }) =>
+  useQuery({
+    queryKey: keys.admin.repayments(filters),
+    queryFn: () =>
+      adminApi.repayments({
+        page: filters.page,
+        size: 50,
+        query: filters.query || undefined,
+        source: filters.source === 'ALL' ? undefined : filters.source,
+        from: filters.from || undefined,
+        to: filters.to || undefined,
+      }),
     enabled: useAdminEnabled(),
     placeholderData: (prev) => prev,
   });

@@ -57,6 +57,7 @@ const AdminControls = lazy(() => import('./pages/admin/Controls'));
 const AdminTeam = lazy(() => import('./pages/admin/Team'));
 const AdminAudit = lazy(() => import('./pages/admin/Audit'));
 const AdminReports = lazy(() => import('./pages/admin/Reports'));
+const AdminRepayments = lazy(() => import('./pages/admin/Repayments'));
 const AdminSupport = lazy(() => import('./pages/admin/Support'));
 const AdminGroups = lazy(() => import('./pages/admin/Groups'));
 const AdminGroup = lazy(() => import('./pages/admin/GroupDetail'));
@@ -169,6 +170,7 @@ export default function App() {
             <Route path="team" element={<AdminTeam />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="repayments" element={<AdminRepayments />} />
             <Route path="groups" element={<AdminGroups />} />
             <Route path="groups/:id" element={<AdminGroup />} />
             <Route path="support" element={<AdminSupport />} />

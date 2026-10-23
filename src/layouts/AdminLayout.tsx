@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowLeftRight, ArrowUpRight, ClipboardList, FileDown, Gauge, History, Menu, MessagesSquare, SlidersHorizontal, UsersRound, UserCog, Users, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowUpRight, ClipboardList, FileDown, Gauge, HandCoins, History, Menu, MessagesSquare, SlidersHorizontal, UsersRound, UserCog, Users, X } from 'lucide-react';
 import { BrandMark } from '../components/Brand';
 import { Pill } from '../components/ui/Bits';
 import { useAdminApplications, useOverview } from '../hooks/queries';
@@ -30,6 +30,7 @@ export function AdminLayout() {
     { to: '/admin/customers', label: 'Customers', icon: Users },
     { to: '/admin/payments', label: 'Payments', icon: ArrowLeftRight, badge: payments },
     { to: '/admin/lending', label: 'Lending', icon: ClipboardList, badge: pendingApplications },
+    { to: '/admin/repayments', label: 'Repayments', icon: HandCoins },
     { to: '/admin/groups', label: 'Loan groups', icon: UsersRound },
     { to: '/admin/support', label: 'Support', icon: MessagesSquare, badge: waitingOnTeam },
     { to: '/admin/controls', label: 'Controls', icon: SlidersHorizontal },

@@ -1,4 +1,4 @@
-import { AlarmClock, ArrowDownLeft, ArrowUpRight, ClipboardList, CreditCard, MessagesSquare, PiggyBank, TrendingUp, Users, Wallet } from 'lucide-react';
+import { AlarmClock, ArrowDownLeft, ArrowUpRight, ClipboardList, CreditCard, HandCoins, MessagesSquare, PiggyBank, TrendingUp, Users, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { IconBadge, StatTile } from '../../components/ui/Bits';
@@ -54,6 +54,16 @@ export default function Overview() {
         <StatTile label="Customer money held" value={nairaShort(o.customerFundsHeld)} icon={<Wallet />} footnote="Wallet balances" />
         <StatTile label="Saved" value={nairaShort(o.book.totalSaved)} icon={<PiggyBank />} tone="info" footnote={`${formatNumber(o.book.activePlans)} active plans`} />
         <StatTile label="Lent" value={nairaShort(o.book.totalLent)} icon={<CreditCard />} footnote={`${formatNumber(o.book.activeLoans)} active · ${formatNumber(o.book.repaidLoans)} repaid`} />
+        <Link to="/admin/repayments" className="block rounded-2xl transition hover:-translate-y-px">
+          <StatTile
+            className="h-full transition hover:border-gold/35"
+            label="Repaid by customers"
+            value={nairaShort(o.book.totalRepaid)}
+            icon={<HandCoins />}
+            tone="success"
+            footnote={`${formatNumber(o.book.repayments)} repayments · ${nairaShort(o.book.repaidThisMonth)} this month`}
+          />
+        </Link>
         <StatTile label="Overdue" value={nairaShort(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.overdueLoans ? 'danger' : 'neutral'} footnote={`${formatNumber(o.book.overdueLoans)} loans`} />
         <StatTile label="Interest charged" value={nairaShort(o.book.totalInterestCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Fees charged" value={nairaShort(o.book.totalFeesCharged)} icon={<TrendingUp />} tone="success" />

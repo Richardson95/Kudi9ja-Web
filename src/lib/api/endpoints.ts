@@ -89,6 +89,8 @@ import type {
   WithdrawalStatus,
   AccountStatus,
   AdminRole,
+  RepaymentHistory,
+  RepaymentSource,
 } from '../../types/api';
 import { http, newIdempotencyKey } from './client';
 import { tokens } from './tokens';
@@ -469,6 +471,9 @@ export const adminApi = {
   exportReport: (name: ExportReportName, from?: string, to?: string) =>
     http.get<ExportReport>(`/admin/exports/${name}`, { from, to }),
   me: () => http.get<TeamMember>('/admin/team/me'),
+  repayments: (input: { page?: number; size?: number; query?: string; source?: RepaymentSource; from?: string; to?: string }) =>
+    http.get<RepaymentHistory>('/admin/repayments', { page: 0, size: 50, ...input }),
+
   audit: (input: { page?: number; size?: number; category?: AuditCategory; query?: string }) =>
     http.get<PageResponse<AuditRow>>('/admin/audit', { page: 0, size: 100, ...input }),
 

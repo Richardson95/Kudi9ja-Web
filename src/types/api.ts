@@ -778,6 +778,10 @@ export interface Overview {
     activeLoans: number;
     overdueLoans: number;
     repaidLoans: number;
+    /** Every repayment customers have made, through the app or recorded by hand. */
+    totalRepaid: Naira;
+    repayments: number;
+    repaidThisMonth: Naira;
   };
   people: {
     customers: number;
@@ -1352,4 +1356,44 @@ export interface GroupLabel {
 export interface LoanGroupDetail {
   group: LoanGroup;
   members: LoanGroupMember[];
+}
+
+// ── Repayment history (admin) ───────────────────────────────────────────────
+
+export type RepaymentSource = 'PAYSTACK' | 'WALLET' | 'BANK_TRANSFER' | 'RECORDED';
+
+export interface AdminRepayment {
+  id: string;
+  paidAt: string;
+  amount: Naira;
+  source: RepaymentSource;
+  sourceLabel: string;
+  /** Null for a loan entered by hand whose borrower has not signed up. */
+  customerId?: string | null;
+  customerName: string;
+  customerRef?: string | null;
+  loanId?: string | null;
+  importedLoanId?: string | null;
+  loanPurpose?: string | null;
+  reference?: string | null;
+  description?: string | null;
+  recordedBy?: string | null;
+}
+
+export interface RepaymentSummary {
+  total: Naira;
+  count: number;
+  today: Naira;
+  todayCount: number;
+  thisMonth: Naira;
+  thisMonthCount: number;
+  viaPaystack: Naira;
+  fromWallet: Naira;
+  bankTransfer: Naira;
+  recordedByHand: Naira;
+}
+
+export interface RepaymentHistory {
+  page: PageResponse<AdminRepayment>;
+  summary: RepaymentSummary;
 }
