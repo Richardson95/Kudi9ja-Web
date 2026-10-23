@@ -133,7 +133,7 @@ function Conversation({ id }: { id: string }) {
   const qc = useQueryClient();
   const dialogs = useDialogs();
   const { adminRole } = useSession();
-  const canAct = can.manageCustomers(adminRole);
+  const canAct = can.answerSupport(adminRole);
   const { busy, run } = useAction();
 
   if (thread.isLoading) {

@@ -59,11 +59,14 @@ export const can = {
   manageCustomers: (r: AdminRole | null) => !!r && r !== 'VIEWER',
   editSettings: (r: AdminRole | null) => r === 'OWNER' || r === 'ADMIN',
   manageTeam: (r: AdminRole | null) => r === 'OWNER',
+  /** Anyone on the panel, whatever their role, answers Help & complaints. */
+  answerSupport: (r: AdminRole | null) => !!r,
 };
 
 export const CAPABILITIES: { label: string; held: (r: AdminRole) => boolean }[] = [
   { label: 'See customers and their full records', held: () => true },
   { label: 'Read the audit log', held: () => true },
+  { label: 'Answer Help & complaints chats', held: () => true },
   { label: 'Confirm pay-ins and approve withdrawals', held: (r) => can.approvePayments(r) },
   { label: 'Act on loans — remind, record repayments, write off', held: (r) => can.actOnLoans(r) },
   { label: 'Flag or freeze a customer', held: (r) => can.manageCustomers(r) },
