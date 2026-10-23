@@ -4,6 +4,7 @@ import {
   addMonths,
   buildSchedule,
   effectiveYieldPct,
+  instalmentCount,
   loanPreview,
   loanRateFor,
   loanRateRange,
@@ -224,5 +225,29 @@ describe('Validation', () => {
   it('matches a typed signature name to the account name', () => {
     expect(sameName('Ada  Okafor', 'ada okafor')).toBe(true);
     expect(sameName('Ada Okafor', 'Ada Okafo')).toBe(false);
+  });
+});
+
+describe('weekly repayment', () => {
+  it('splits a tenure into as many weeks as the months hold', () => {
+    expect(instalmentCount('WEEKLY', 1)).toBe(4);
+    expect(instalmentCount('WEEKLY', 3)).toBe(13);
+    expect(instalmentCount('WEEKLY', 6)).toBe(26);
+    expect(instalmentCount('WEEKLY', 12)).toBe(52);
+    expect(instalmentCount('MONTHLY', 6)).toBe(6);
+  });
+
+  it('costs the same as monthly, split into weekly instalments seven days apart', () => {
+    const weekly = loanPreview(S, 200_000, 3, 'WEEKLY');
+    const monthly = loanPreview(S, 200_000, 3);
+    expect(weekly.total).toBe(monthly.total);
+    expect(weekly.count).toBe(13);
+    expect(round2(weekly.each)).toBe(round2(weekly.total / 13));
+
+    const start = new Date(2026, 0, 31, 12);
+    const rows = buildSchedule(200_000, 0.25, 3, start, 0, start, 'WEEKLY');
+    expect(rows).toHaveLength(13);
+    expect((rows[1]!.dueDate.getTime() - rows[0]!.dueDate.getTime()) / 86_400_000).toBe(7);
+    expect(round2(rows.reduce((sum, r) => sum + r.amount, 0))).toBe(250_000);
   });
 });

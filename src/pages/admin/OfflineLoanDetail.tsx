@@ -17,7 +17,7 @@ import { useToast } from '../../components/ui/Toast';
 import { useAction } from '../../hooks/useAction';
 import { keys, useImportedLoanFile, useRefresh } from '../../hooks/queries';
 import { adminApi, groupsApi } from '../../lib/api/endpoints';
-import { buildSchedule } from '../../lib/finance';
+import { buildSchedule, termPhrase } from '../../lib/finance';
 import { asDay, formatAmountInput, maskLast4, naira, parseAmount } from '../../lib/format';
 import { can, instalmentLabel, instalmentTone } from '../../lib/labels';
 import { GENDERS, NIGERIAN_STATES } from '../../lib/validators';
@@ -52,7 +52,7 @@ export default function OfflineLoanDetail() {
   // On an account the customer has taken over, their details are theirs; until then the team can still correct them.
   const activated = l.claimed && !!owner.data && owner.data.accountStatus !== 'PENDING_ACTIVATION';
   const reload = () => qc.invalidateQueries({ queryKey: keys.admin.importFile(id) });
-  const schedule = l.disbursedAt ? buildSchedule(l.principal, l.flatRate, l.tenureMonths, new Date(l.disbursedAt), l.amountRepaid) : [];
+  const schedule = l.disbursedAt ? buildSchedule(l.principal, l.flatRate, l.tenureMonths, new Date(l.disbursedAt), l.amountRepaid, undefined, l.repaymentFrequency) : [];
 
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -94,7 +94,7 @@ export default function OfflineLoanDetail() {
         backLabel="Customers"
         eyebrow="Offline loan"
         title={l.fullName}
-        subtitle={`${naira(l.principal)} · ${l.tenureMonths} months · ${l.purpose}`}
+        subtitle={`${naira(l.principal)} · ${termPhrase(l.tenureMonths, l.repaymentFrequency)} · ${l.purpose}`}
         actions={
           <>
             <Pill tone={activated ? 'success' : 'info'}>{activated ? 'Signed up' : 'Not activated yet'}</Pill>

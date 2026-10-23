@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { PageHeader } from '../../../components/PageHeader';
-import { Pill } from '../../../components/ui/Bits';
+import { Pill, Segmented } from '../../../components/ui/Bits';
 import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
 import { AmountInput, FieldLabel, RangeSlider } from '../../../components/ui/Inputs';
-import { addMonths, feeBasis, loanPreview } from '../../../lib/finance';
+import { eachInstalment, feeBasis, instalmentDue, instalmentsPhrase, loanPreview } from '../../../lib/finance';
 import { asDay, months as monthsLabel, naira, parseAmount, rateOf } from '../../../lib/format';
 import { useSettings } from '../../../state/settings';
+import type { RepaymentFrequency } from '../../../types/api';
 
 /** What a loan would cost, before applying. Uses the rate card in force today. */
 export default function LoanCalculator() {
   const s = useSettings();
   const [amount, setAmount] = useState('200,000');
   const [term, setTerm] = useState(Math.min(6, s.lending.maxTenureMonths));
+  const [frequency, setFrequency] = useState<RepaymentFrequency>('MONTHLY');
   const principal = parseAmount(amount);
-  const p = loanPreview(s, principal, term);
+  const p = loanPreview(s, principal, term, frequency);
   const outOfRange = principal > 0 && (principal < s.lending.minAmount || principal > s.lending.maxAmount);
 
   return (
@@ -35,6 +37,17 @@ export default function LoanCalculator() {
             </div>
             <RangeSlider label="Months" value={term} min={1} max={s.lending.maxTenureMonths} onChange={setTerm} />
           </div>
+          <div>
+            <FieldLabel>Repay</FieldLabel>
+            <Segmented<RepaymentFrequency>
+              value={frequency}
+              onChange={setFrequency}
+              options={[
+                { value: 'MONTHLY', label: 'Monthly' },
+                { value: 'WEEKLY', label: 'Weekly' },
+              ]}
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: s.lending.maxTenureMonths }, (_, i) => i + 1).map((m) => (
               <Pill key={m} tone={m === term ? 'gold' : 'neutral'}>
@@ -45,8 +58,9 @@ export default function LoanCalculator() {
         </Card>
         <Card gradient glow className="space-y-5 p-6">
           <div>
-            <p className="text-[13px] text-ink-3">Each month</p>
-            <p className="num text-4xl font-extrabold">{naira(p.monthly)}</p>
+            <p className="text-[13px] text-ink-3">{eachInstalment(frequency)}</p>
+            <p className="num text-4xl font-extrabold">{naira(p.each)}</p>
+            <p className="mt-1 text-[12.5px] text-ink-3">{instalmentsPhrase(frequency, term)}. The total is the same weekly or monthly.</p>
           </div>
           <DetailRows
             rows={[
@@ -55,7 +69,7 @@ export default function LoanCalculator() {
               ['Management fee', `${naira(p.fee)} (${feeBasis(s, principal)})`],
               ['Transaction fee', naira(p.transactionFee)],
               { label: 'You receive', value: naira(p.net), tone: 'success' },
-              ['First payment', asDay(addMonths(new Date(), 1))],
+              ['First payment', asDay(instalmentDue(frequency, new Date(), 1))],
               { label: 'Total to repay', value: naira(p.total), bold: true },
             ]}
           />

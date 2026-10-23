@@ -20,6 +20,7 @@ import { asDay, asDayTime, maskLast4, naira, relative } from '../../lib/format';
 import { accountTone, applicationTone, can, depositTone, loanTone, paystackTone, payoutLabel, planTone, supportTone } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import type { AccountStatus, Loan } from '../../types/api';
+import { termPhrase } from '../../lib/finance';
 
 type Tab = 'overview' | 'loans' | 'savings' | 'money' | 'documents' | 'support';
 
@@ -200,7 +201,7 @@ function LoansTab({ id }: { id: string }) {
                 <div>
                   <p className="font-bold">{l.purpose}</p>
                   <p className="text-[12.5px] text-ink-3">
-                    {naira(l.principal)} · {l.tenureMonths} months · {l.flatRateLabel} · disbursed {asDay(l.disbursedAt)}
+                    {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency)} · {l.flatRateLabel} · disbursed {asDay(l.disbursedAt)}
                   </p>
                 </div>
                 <Pill tone={loanTone(l.status)}>{l.statusLabel}</Pill>
@@ -282,7 +283,7 @@ function LoansTab({ id }: { id: string }) {
                 <Link to={`/admin/lending/applications/${a.id}`} className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-surface-alt/50">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">
-                      {naira(a.amount)} · {a.tenureMonths} months · {a.purpose}
+                      {naira(a.amount)} · {termPhrase(a.tenureMonths, a.repaymentFrequency)} · {a.purpose}
                     </p>
                     <p className="text-[12px] text-ink-3">
                       {a.businessName} · sent {asDay(a.submittedAt)}

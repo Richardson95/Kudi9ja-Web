@@ -338,6 +338,9 @@ export interface ScheduleRow {
   daysUntilDue: number;
 }
 
+/** How often a loan is repaid. Monthly unless the borrower chose weekly. */
+export type RepaymentFrequency = 'MONTHLY' | 'WEEKLY';
+
 export interface Loan {
   id: string;
   principal: Naira;
@@ -357,7 +360,11 @@ export interface Loan {
   settledAt?: ISODate;
   totalInterest: Naira;
   totalRepayable: Naira;
-  monthlyRepayment: Naira;
+  repaymentFrequency: RepaymentFrequency;
+  repaymentFrequencyLabel: string;
+  /** How many instalments: one a month, or one a week. */
+  installmentCount: number;
+  installmentAmount: Naira;
   amountRepaid: Naira;
   rebateGranted: Naira;
   outstanding: Naira;
@@ -378,7 +385,11 @@ export interface LoanQuote {
   costPerMonthPct: number;
   totalInterest: Naira;
   totalRepayable: Naira;
-  monthlyRepayment: Naira;
+  repaymentFrequency: RepaymentFrequency;
+  repaymentFrequencyLabel: string;
+  /** How many instalments: one a month, or one a week. */
+  installmentCount: number;
+  installmentAmount: Naira;
   processingFee: Naira;
   processingFeeBasis: string;
   transactionFee: Naira;
@@ -434,6 +445,7 @@ export interface LoanApplication {
   id: string;
   amount: Naira;
   tenureMonths: number;
+  repaymentFrequency: RepaymentFrequency;
   purpose: string;
   businessName: string;
   businessAddress?: string;
@@ -455,6 +467,7 @@ export interface AdminApplicationRow {
   customerRef: string;
   amount: Naira;
   tenureMonths: number;
+  repaymentFrequency: RepaymentFrequency;
   purpose: string;
   businessName: string;
   status: LoanApplicationStatus;
@@ -800,6 +813,7 @@ export interface AdminLoanRow {
   amountRepaid: Naira;
   processingFee: Naira;
   tenureMonths: number;
+  repaymentFrequency: RepaymentFrequency;
   purpose: string;
   status: LoanStatus;
   statusLabel: string;
@@ -816,6 +830,7 @@ export interface ImportedLoan {
   phone?: string;
   principal: Naira;
   tenureMonths: number;
+  repaymentFrequency: RepaymentFrequency;
   flatRate: number;
   /** The management fee taken when the loan was given. */
   processingFee: Naira;
@@ -917,6 +932,7 @@ export interface ImportLoanInput {
   phone?: string;
   principal: number;
   tenureMonths: number;
+  repaymentFrequency?: RepaymentFrequency;
   flatRate: number;
   processingFee?: number;
   transactionFee?: number;

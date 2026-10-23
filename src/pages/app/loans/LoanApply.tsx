@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Send } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
-import { Notice } from '../../../components/ui/Bits';
+import { Notice, Segmented } from '../../../components/ui/Bits';
 import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
 import { useDialogs } from '../../../components/ui/Dialogs';
@@ -14,11 +14,11 @@ import { useAction } from '../../../hooks/useAction';
 import { useEligibility, useRefresh } from '../../../hooks/queries';
 import { loansApi } from '../../../lib/api/endpoints';
 import { cn } from '../../../lib/cn';
-import { loanPreview } from '../../../lib/finance';
+import { eachInstalment, instalmentsPhrase, loanPreview } from '../../../lib/finance';
 import { formatAmountInput, months as monthsLabel, naira, parseAmount, rateOf } from '../../../lib/format';
 import { LOAN_PURPOSES, NIGERIAN_STATES } from '../../../lib/validators';
 import { useSettings } from '../../../state/settings';
-import type { Guarantor, LoanQuote } from '../../../types/api';
+import type { Guarantor, LoanQuote, RepaymentFrequency } from '../../../types/api';
 
 const STEPS = ['Loan', 'Business', 'Guarantor', 'Documents', 'Review'] as const;
 const PHONE = /^0[7-9][01]\d{8}$/;
@@ -48,6 +48,7 @@ export default function LoanApply() {
 
   const [amount, setAmount] = useState('');
   const [term, setTerm] = useState(3);
+  const [frequency, setFrequency] = useState<RepaymentFrequency>('MONTHLY');
   const [purpose, setPurpose] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessAddress, setBusinessAddress] = useState('');
@@ -61,7 +62,11 @@ export default function LoanApply() {
 
   const e = eligibility.data;
   const principal = parseAmount(amount);
-  const preview = loanPreview(s, principal, term);
+  const preview = loanPreview(s, principal, term, frequency);
+  // Only trust a quote for exactly what is on screen.
+  const q = quote && quote.repaymentFrequency === frequency && quote.months === term ? quote : null;
+  const eachLabel = eachInstalment(frequency);
+  const each = naira(q?.installmentAmount ?? preview.each);
 
   // The server prices the loan; ask it once the figures settle.
   useEffect(() => {
@@ -70,10 +75,10 @@ export default function LoanApply() {
       return;
     }
     const t = setTimeout(() => {
-      loansApi.quote(principal, term).then(setQuote).catch(() => setQuote(null));
+      loansApi.quote(principal, term, frequency).then(setQuote).catch(() => setQuote(null));
     }, 400);
     return () => clearTimeout(t);
-  }, [principal, term, e]);
+  }, [principal, term, frequency, e]);
 
   if (eligibility.isLoading) return <PageSpinner />;
   if (e && !e.eligible) {
@@ -109,7 +114,8 @@ export default function LoanApply() {
       amount: principal,
       details: [
         ['Over', monthsLabel(term)],
-        ['Each month', naira(quote?.monthlyRepayment ?? preview.monthly)],
+        ['Repaid', instalmentsPhrase(frequency, term)],
+        [eachLabel, each],
       ],
     });
     if (!pin) return;
@@ -117,6 +123,7 @@ export default function LoanApply() {
       loansApi.apply({
         amount: principal,
         months: term,
+        repaymentFrequency: frequency,
         purpose,
         businessName: businessName.trim(),
         businessAddress: businessAddress.trim(),
@@ -160,20 +167,36 @@ export default function LoanApply() {
               </div>
               <RangeSlider label="Months" value={term} min={e?.minMonths ?? 1} max={e?.maxMonths ?? s.lending.maxTenureMonths} onChange={setTerm} />
             </div>
+            <div>
+              <FieldLabel>How often will you repay?</FieldLabel>
+              <Segmented<RepaymentFrequency>
+                value={frequency}
+                onChange={setFrequency}
+                options={[
+                  { value: 'MONTHLY', label: 'Monthly' },
+                  { value: 'WEEKLY', label: 'Weekly' },
+                ]}
+              />
+              <p className="mt-1.5 text-[12px] text-ink-3">
+                {instalmentsPhrase(frequency, term)}, the first {frequency === 'WEEKLY' ? 'a week' : 'a month'} after the money reaches your wallet. The
+                total is the same either way.
+              </p>
+            </div>
             <Select label="What is it for?" placeholder="Choose a purpose" value={purpose} onChange={(ev) => setPurpose(ev.target.value)} options={LOAN_PURPOSES} />
             {principal > 0 && (
               <DetailRows
                 rows={[
-                  ['Flat rate', quote?.flatRateLabel ?? rateOf(preview.rate)],
-                  ['Each month', naira(quote?.monthlyRepayment ?? preview.monthly)],
-                  ['Management fee', naira(quote?.processingFee ?? preview.fee)],
-                  ['Transaction fee', naira(quote?.transactionFee ?? preview.transactionFee)],
-                  { label: 'You receive', value: naira(quote?.netDisbursed ?? preview.net), tone: 'success' },
-                  { label: 'Total to repay', value: naira(quote?.totalRepayable ?? preview.total), bold: true },
+                  ['Flat rate', q?.flatRateLabel ?? rateOf(preview.rate)],
+                  [eachLabel, each],
+                  ['Payments', instalmentsPhrase(frequency, term)],
+                  ['Management fee', naira(q?.processingFee ?? preview.fee)],
+                  ['Transaction fee', naira(q?.transactionFee ?? preview.transactionFee)],
+                  { label: 'You receive', value: naira(q?.netDisbursed ?? preview.net), tone: 'success' },
+                  { label: 'Total to repay', value: naira(q?.totalRepayable ?? preview.total), bold: true },
                 ]}
               />
             )}
-            {quote?.note && <Notice tone="neutral">{quote.note}</Notice>}
+            {q?.note && <Notice tone="neutral">{q.note}</Notice>}
           </>
         )}
 
@@ -258,9 +281,10 @@ export default function LoanApply() {
               rows={[
                 ['Amount', naira(principal)],
                 ['Over', monthsLabel(term)],
+                ['Repaid', instalmentsPhrase(frequency, term)],
                 ['Purpose', purpose],
-                ['Each month', naira(quote?.monthlyRepayment ?? preview.monthly)],
-                ['You receive', naira(quote?.netDisbursed ?? preview.net)],
+                [eachLabel, each],
+                ['You receive', naira(q?.netDisbursed ?? preview.net)],
                 ['Business', `${businessName} · ${businessAddress}`],
                 ['Monthly income', naira(parseAmount(income))],
                 ['Guarantor', `${g.fullName} (${g.relationship}) · ${g.phone}`],

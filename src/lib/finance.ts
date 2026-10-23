@@ -1,4 +1,4 @@
-import type { AutoFrequency, PublicSettings } from '../types/api';
+import type { AutoFrequency, PublicSettings, RepaymentFrequency } from '../types/api';
 
 /**
  * Every money formula the website previews, in one place, reading the live
@@ -78,6 +78,10 @@ export interface LoanPreview {
   interest: number;
   total: number;
   monthly: number;
+  /** How often they repay, how many times, and how much each time. */
+  frequency: RepaymentFrequency;
+  count: number;
+  each: number;
   /** The management fee. */
   fee: number;
   /** The flat transaction fee. */
@@ -88,13 +92,59 @@ export interface LoanPreview {
 /** The flat transaction fee on every loan, beside the management fee. */
 export const transactionFee = (s: PublicSettings): number => s.lending.transactionFee ?? 0;
 
-export function loanPreview(s: PublicSettings, principal: number, months: number): LoanPreview {
+/**
+ * How many instalments a tenure of `months` is split into: one a month, or one
+ * a week for as many weeks as the months hold (4, 13, 26, 52 for 1, 3, 6, 12).
+ * Mirrors `RepaymentFrequency` on the server.
+ */
+export function instalmentCount(frequency: RepaymentFrequency, months: number): number {
+  if (months <= 0) return 0;
+  return frequency === 'WEEKLY' ? Math.round((months * 52) / 12) : months;
+}
+
+/** "a week" or "a month". */
+export const perInstalment = (frequency: RepaymentFrequency) => (frequency === 'WEEKLY' ? 'a week' : 'a month');
+
+/** "Each week" or "Each month". */
+export const eachInstalment = (frequency: RepaymentFrequency) => (frequency === 'WEEKLY' ? 'Each week' : 'Each month');
+
+/** "13 weekly payments" or "3 monthly payments". */
+export const instalmentsPhrase = (frequency: RepaymentFrequency, months: number) => {
+  const n = instalmentCount(frequency, months);
+  return `${n} ${frequency === 'WEEKLY' ? 'weekly' : 'monthly'} payment${n === 1 ? '' : 's'}`;
+};
+
+/** "monthly" or "weekly". */
+export const frequencyWord = (frequency: RepaymentFrequency | undefined) => (frequency === 'WEEKLY' ? 'weekly' : 'monthly');
+
+/** "6 months, repaid monthly" — for list rows. */
+export const termPhrase = (months: number, frequency: RepaymentFrequency | undefined) =>
+  `${months} month${months === 1 ? '' : 's'}, repaid ${frequencyWord(frequency)}`;
+
+/** When the nth instalment (from 1) falls due. */
+export function instalmentDue(frequency: RepaymentFrequency, disbursedAt: Date, n: number): Date {
+  return frequency === 'WEEKLY' ? new Date(disbursedAt.getTime() + n * 7 * 86_400_000) : addMonths(disbursedAt, n);
+}
+
+export function loanPreview(s: PublicSettings, principal: number, months: number, frequency: RepaymentFrequency = 'MONTHLY'): LoanPreview {
   const rate = loanRateFor(s, months);
   const interest = principal * rate;
   const total = principal + interest;
   const fee = principal > 0 ? processingFee(s, principal) : 0;
   const txn = principal > 0 ? transactionFee(s) : 0;
-  return { rate, interest, total, monthly: months > 0 ? total / months : 0, fee, transactionFee: txn, net: principal - fee - txn };
+  const count = instalmentCount(frequency, months);
+  return {
+    rate,
+    interest,
+    total,
+    monthly: months > 0 ? total / months : 0,
+    frequency,
+    count,
+    each: count > 0 ? total / count : 0,
+    fee,
+    transactionFee: txn,
+    net: principal - fee - txn,
+  };
 }
 
 export function feeBasis(s: PublicSettings, principal: number): string {
@@ -137,7 +187,7 @@ export interface Instalment {
 }
 
 /**
- * Equal instalments, the nth due n months after disbursement. What has been
+ * Equal instalments, the nth due n months (or, weekly, n weeks) after disbursement. What has been
  * repaid is poured in oldest-first: covered → paid, partly → part paid, past
  * its date and not covered → overdue.
  */
@@ -148,12 +198,14 @@ export function buildSchedule(
   disbursedAt: Date,
   amountRepaid = 0,
   now = new Date(),
+  frequency: RepaymentFrequency = 'MONTHLY',
 ): Instalment[] {
   const total = principal * (1 + flatRate);
-  const each = tenureMonths > 0 ? total / tenureMonths : 0;
+  const count = instalmentCount(frequency, tenureMonths);
+  const each = count > 0 ? total / count : 0;
   let covered = amountRepaid;
-  return Array.from({ length: tenureMonths }, (_, i) => {
-    const dueDate = addMonths(disbursedAt, i + 1);
+  return Array.from({ length: count }, (_, i) => {
+    const dueDate = instalmentDue(frequency, disbursedAt, i + 1);
     const paid = covered >= each ? each : Math.max(covered, 0);
     covered -= paid;
     const settled = paid >= each - 0.01;

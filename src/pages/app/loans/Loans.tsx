@@ -8,7 +8,7 @@ import { Skeleton } from '../../../components/ui/Spinner';
 import { useAction } from '../../../hooks/useAction';
 import { useApplications, useEligibility, useLoans, useRefresh } from '../../../hooks/queries';
 import { loansApi, officersApi } from '../../../lib/api/endpoints';
-import { loanRateRange } from '../../../lib/finance';
+import { frequencyWord, loanRateRange, termPhrase } from '../../../lib/finance';
 import { asDay, naira } from '../../../lib/format';
 import { applicationTone, isLoanOpen, loanTone } from '../../../lib/labels';
 import { useDialogs } from '../../../components/ui/Dialogs';
@@ -106,7 +106,7 @@ export default function Loans() {
                   </IconBadge>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold">
-                      {naira(a.amount)} · {a.tenureMonths} months
+                      {naira(a.amount)} · {termPhrase(a.tenureMonths, a.repaymentFrequency)}
                     </p>
                     <p className="text-[12.5px] text-ink-3">
                       {a.purpose} · sent {asDay(a.submittedAt)}
@@ -185,7 +185,7 @@ function LoanCard({ loan: l }: { loan: Loan }) {
         <div>
           <p className="font-bold">{l.purpose}</p>
           <p className="text-[12.5px] text-ink-3">
-            {naira(l.principal)} · {l.tenureMonths} months · {l.flatRateLabel}
+            {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency)} · {l.flatRateLabel}
           </p>
         </div>
         <Pill tone={loanTone(l.status)}>{l.statusLabel}</Pill>
@@ -204,7 +204,7 @@ function LoanCard({ loan: l }: { loan: Loan }) {
       </div>
       <ProgressBar className="mt-3" value={l.repaymentProgress} tone={l.status === 'REPAID' ? 'success' : l.status === 'OVERDUE' ? 'danger' : 'gold'} />
       <p className="mt-1.5 text-[11.5px] text-ink-3">
-        {l.installmentsPaid} of {l.tenureMonths} instalments paid
+        {l.installmentsPaid} of {l.installmentCount} {frequencyWord(l.repaymentFrequency)} instalments paid
       </p>
     </Card>
   );

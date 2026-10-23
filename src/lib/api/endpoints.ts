@@ -38,6 +38,7 @@ import type {
   LoanApplication,
   LoanApplicationStatus,
   LoanQuote,
+  RepaymentFrequency,
   LoanStatus,
   NotificationPreference,
   NotifyKind,
@@ -303,11 +304,13 @@ export const loansApi = {
   loans: () => http.get<Loan[]>('/loans'),
   loan: (id: string) => http.get<Loan>(`/loans/${id}`),
   eligibility: () => http.get<Eligibility>('/loans/eligibility'),
-  quote: (amount: number, months: number) => http.get<LoanQuote>('/loans/quote', { amount, months }),
+  quote: (amount: number, months: number, frequency: RepaymentFrequency = 'MONTHLY') =>
+    http.get<LoanQuote>('/loans/quote', { amount, months, frequency }),
   /** Four files and a form in one request. Nothing is credited by this call. */
   apply: (input: {
     amount: number;
     months: number;
+    repaymentFrequency: RepaymentFrequency;
     purpose: string;
     businessName: string;
     businessAddress: string;

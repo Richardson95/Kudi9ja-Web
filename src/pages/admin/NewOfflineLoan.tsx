@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FilePlus2, Plus, Save, Trash2, X } from 'lucide-react';
 import { OfficerChecklist, useOfficerOptions } from '../../components/admin/OfficersPanel';
 import { PageHeader } from '../../components/PageHeader';
-import { Notice } from '../../components/ui/Bits';
+import { Notice, Segmented } from '../../components/ui/Bits';
 import { Button } from '../../components/ui/Button';
 import { Card, DetailRows, SectionHeader } from '../../components/ui/Card';
 import { Input, Select, Textarea } from '../../components/ui/Field';
@@ -12,12 +12,19 @@ import { useToast } from '../../components/ui/Toast';
 import { useAction } from '../../hooks/useAction';
 import { useBanks, useRefresh } from '../../hooks/queries';
 import { adminApi, groupsApi } from '../../lib/api/endpoints';
-import { buildSchedule, processingFee as managementFeeFor, transactionFee as transactionFeeFor } from '../../lib/finance';
+import {
+  buildSchedule,
+  eachInstalment,
+  instalmentCount,
+  instalmentsPhrase,
+  processingFee as managementFeeFor,
+  transactionFee as transactionFeeFor,
+} from '../../lib/finance';
 import { useSettings } from '../../state/settings';
 import { asDay, fileSize, formatAmountInput, isoDate, naira, parseAmount } from '../../lib/format';
 import { GENDERS, LOAN_PURPOSES, NIGERIAN_STATES } from '../../lib/validators';
 import { useSession } from '../../state/session';
-import type { OfflineGuarantor } from '../../types/api';
+import type { OfflineGuarantor, RepaymentFrequency } from '../../types/api';
 
 const MAX_BYTES = 12 * 1024 * 1024;
 const DOC_LABELS = ['Loan agreement', 'Bank statement', 'ID card', 'Passport photo', 'Utility bill', 'Business photo', 'Guarantor form', 'Other'];
@@ -51,6 +58,7 @@ export default function NewOfflineLoan() {
     principal: '', tenureMonths: '6', ratePct: '25', processingFee: '', transactionFee: '', purpose: '', disbursedAt: isoDate(new Date()), amountRepaid: '',
     payoutBank: '', payoutAccountNumber: '', notes: '',
   });
+  const [frequency, setFrequency] = useState<RepaymentFrequency>('MONTHLY');
   const [guarantors, setGuarantors] = useState<OfflineGuarantor[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [docs, setDocs] = useState<PendingDoc[]>([]);
@@ -75,7 +83,8 @@ export default function NewOfflineLoan() {
   const rate = (Number(f.ratePct) || 0) / 100;
   const total = principal * (1 + rate);
   const repaid = parseAmount(f.amountRepaid);
-  const schedule = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, new Date(`${f.disbursedAt}T12:00:00`), repaid) : [];
+  const schedule = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, new Date(`${f.disbursedAt}T12:00:00`), repaid, undefined, frequency) : [];
+  const count = instalmentCount(frequency, months);
 
   const errors = {
     bvn: f.bvn && !/^\d{11}$/.test(f.bvn) ? 'Eleven digits' : null,
@@ -109,6 +118,7 @@ export default function NewOfflineLoan() {
         phone: opt(f.phone),
         principal,
         tenureMonths: months,
+        repaymentFrequency: frequency,
         flatRate: rate,
         processingFee: parseAmount(f.processingFee) || undefined,
         transactionFee: parseAmount(f.transactionFee) || undefined,
@@ -194,6 +204,18 @@ export default function NewOfflineLoan() {
               <Input label="Amount lent (₦) *" inputMode="numeric" value={f.principal} onChange={(e) => setPrincipal(formatAmountInput(e.target.value))} />
               <Select label="Purpose *" placeholder="Choose" value={f.purpose} onChange={(e) => set('purpose')(e.target.value)} options={LOAN_PURPOSES} />
               <Input label="Months to repay *" type="number" min={1} max={60} value={f.tenureMonths} onChange={(e) => set('tenureMonths')(e.target.value)} />
+              <div>
+                <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">Repaid *</span>
+                <Segmented<RepaymentFrequency>
+                  value={frequency}
+                  onChange={setFrequency}
+                  options={[
+                    { value: 'MONTHLY', label: 'Monthly' },
+                    { value: 'WEEKLY', label: 'Weekly' },
+                  ]}
+                />
+                {months > 0 && <p className="mt-1.5 text-[12px] text-ink-3">{instalmentsPhrase(frequency, months)}</p>}
+              </div>
               <Input label="Flat interest, % of the loan *" type="number" min={0} step="0.5" value={f.ratePct} onChange={(e) => set('ratePct')(e.target.value)} hint="Charged once over the whole term" />
               <Input
                 label="Management fee charged (₦)"
@@ -313,7 +335,7 @@ export default function NewOfflineLoan() {
                 { label: 'Paid out to the borrower', value: naira(Math.max(principal - parseAmount(f.processingFee) - parseAmount(f.transactionFee), 0)), tone: 'gold' },
                 ['Interest', naira(principal * rate)],
                 ['Total to repay', naira(total)],
-                ['Monthly', naira(months ? total / months : 0)],
+                [eachInstalment(frequency), naira(count ? total / count : 0)],
                 { label: 'Already repaid', value: naira(repaid), tone: 'success' },
                 { label: 'Outstanding', value: naira(Math.max(total - repaid, 0)), bold: true },
                 schedule.length ? ['Last payment due', asDay(schedule[schedule.length - 1]!.dueDate)] : null,
