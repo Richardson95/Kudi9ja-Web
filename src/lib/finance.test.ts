@@ -47,8 +47,8 @@ const S: PublicSettings = {
     minAmount: 50_000,
     maxAmount: 5_000_000,
     flatProcessingFee: 5000,
-    processingFeeThreshold: 500_000,
-    processingFeeRate: 0.01,
+    processingFeeThreshold: 250_000,
+    processingFeeRate: 0.02,
     repaymentFeeRate: 0.02,
     weeklyAllowed: true,
     monthlyAllowed: true,
@@ -126,11 +126,12 @@ describe('Lending', () => {
     expect(p.each).toBe(monthly);
   });
 
-  it('charges a flat ₦5,000 up to and including ₦500,000, then 1% of the whole amount', () => {
+  it('charges a flat ₦5,000 up to and including ₦250,000, then 2% of the whole amount', () => {
     expect(processingFee(S, 50_000)).toBe(5000);
-    expect(processingFee(S, 500_000)).toBe(5000);
-    expect(processingFee(S, 500_001)).toBeCloseTo(5000.01);
-    expect(processingFee(S, 2_000_000)).toBe(20_000);
+    expect(processingFee(S, 250_000)).toBe(5000);
+    expect(processingFee(S, 250_001)).toBeCloseTo(5000.02);
+    expect(processingFee(S, 500_000)).toBe(10_000);
+    expect(processingFee(S, 2_000_000)).toBe(40_000);
   });
 
   it('takes only the management fee out of the payout; the 2% is on each repayment', () => {
@@ -146,7 +147,7 @@ describe('Lending', () => {
 
   it.each([
     [100_000, 5000, 95_000],
-    [600_000, 6000, 594_000],
+    [600_000, 12_000, 588_000],
   ])('₦%i borrowed: ₦%i management fee, ₦%i received', (principal, fee, net) => {
     const p = loanPreview(S, principal, 3);
     expect(p.fee).toBe(fee);
