@@ -284,7 +284,7 @@ export default function Controls() {
       <Group title="Security">
         <Grid>
           {num('maxPasscodeAttempts', 'Passcode attempts before sign-out')}
-          {num('lockTimeoutMinutes', 'Lock after idle (minutes)')}
+          {num('lockTimeoutMinutes', 'Lock after idle (minutes)', 'At least 10 minutes.')}
           {num('otpResendSeconds', 'Wait before resending a code (seconds)')}
         </Grid>
       </Group>

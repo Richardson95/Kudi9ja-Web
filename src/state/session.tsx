@@ -237,15 +237,19 @@ export function useProfile(): Profile {
   return profile;
 }
 
+/** Never lock sooner than this, whatever the saved setting says. */
+export const MIN_LOCK_MINUTES = 10;
+
 /**
- * Locks after the admin-set idle time (2 minutes by default): no pointer,
+ * Locks after the admin-set idle time (10 minutes at the least): no pointer,
  * key or scroll activity, or the tab hidden for that long.
  */
 export function useIdleLock() {
   const { stage, lock } = useSession();
   const settings = useSettings();
   const last = useRef(Date.now());
-  const minutes = settings.security.lockTimeoutMinutes;
+  const saved = settings.security.lockTimeoutMinutes;
+  const minutes = saved > 0 ? Math.max(saved, MIN_LOCK_MINUTES) : saved;
 
   useEffect(() => {
     if (stage !== 'unlocked' || minutes <= 0) return;
