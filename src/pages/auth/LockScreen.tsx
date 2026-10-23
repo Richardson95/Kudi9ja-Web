@@ -10,7 +10,7 @@ import { firstName } from '../../lib/format';
 import { useSession } from '../../state/session';
 import { useSettings } from '../../state/settings';
 
-/** Shown on every visit and after idle time: the six-digit sign-in passcode. */
+/** Shown after signing in and after idle time: the six-digit sign-in passcode. */
 export default function LockScreen() {
   usePageTitle('Unlock');
   const { unlock, profile, setProfile, attemptsLeft, signOut } = useSession();

@@ -3,8 +3,8 @@
  *
  * A browser has no keystore, so the pair is kept in localStorage and the
  * access token also in memory. What protects a walked-away laptop is the
- * same thing that protects a phone: every visit opens on the passcode lock,
- * and the app locks itself after the admin-set idle time.
+ * same thing that protects a phone: the app asks for the passcode after the
+ * admin-set idle time (10 minutes at least), on this visit or the next.
  */
 const KEY = 'k9.session';
 

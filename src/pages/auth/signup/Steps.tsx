@@ -485,7 +485,7 @@ export function CodeStep({ draft, next, mode }: StepProps & { mode: 'passcode' |
   const subhead = confirming
     ? 'Enter it once more to be sure.'
     : mode === 'passcode'
-      ? `You will type this every time you open Kudi9ja. ${length} digits, no repeats, no straight runs.`
+      ? `You will type this to open Kudi9ja after signing in or 10 minutes away. ${length} digits, no repeats, no straight runs.`
       : `A separate ${length}-digit PIN that authorises every saving, repayment and withdrawal.`;
 
   return (

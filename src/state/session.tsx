@@ -11,8 +11,9 @@ import { useTheme, type ThemeChoice } from './theme';
 /**
  * Where the visitor stands:
  *  - signedOut — no session; email and password needed.
- *  - locked    — a session exists but the sign-in passcode has not been
- *                entered in this visit (every visit, and after idle time).
+ *  - locked    — a session exists but the passcode is needed: after
+ *                signing in, and after the idle limit (10 minutes at least).
+ *                A refresh or new visit inside that limit stays unlocked.
  *  - unlocked  — the dashboard.
  */
 export type Stage = 'signedOut' | 'locked' | 'unlocked';
@@ -74,6 +75,53 @@ function readPaystackHandoff(): boolean {
   }
 }
 
+/**
+ * When the visitor last did something in an unlocked app, and how long the
+ * idle lock allows. Kept in localStorage so a refresh, a new tab or reopening
+ * the browser within that time carries on without the passcode; only idle
+ * time past the limit, or signing out, brings the lock back.
+ */
+const ACTIVE_KEY = 'k9.active';
+
+interface Activity {
+  at: number;
+  /** Milliseconds of idle time allowed; 0 means the lock is switched off. */
+  limit: number;
+}
+
+function readActivity(): Activity | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_KEY);
+    if (!raw) return null;
+    const a = JSON.parse(raw) as Partial<Activity>;
+    return typeof a.at === 'number' && typeof a.limit === 'number' ? { at: a.at, limit: a.limit } : null;
+  } catch {
+    return null;
+  }
+}
+
+function noteActivity(limit: number, at = Date.now()) {
+  try {
+    localStorage.setItem(ACTIVE_KEY, JSON.stringify({ at, limit }));
+  } catch {
+    // Storage blocked: every visit opens on the passcode, as before.
+  }
+}
+
+function clearActivity() {
+  try {
+    localStorage.removeItem(ACTIVE_KEY);
+  } catch {
+    // nothing stored
+  }
+}
+
+/** Still inside the idle limit from the last visit or another tab. */
+function recentlyActive(): boolean {
+  const a = readActivity();
+  return !!a && (a.limit <= 0 || Date.now() - a.at < a.limit);
+}
+
 const themeToApi = (c: ThemeChoice): ThemeMode => (c === 'system' ? 'SYSTEM' : c === 'light' ? 'LIGHT' : 'DARK');
 const themeFromApi = (t?: ThemeMode): ThemeChoice | null =>
   t === 'SYSTEM' ? 'system' : t === 'LIGHT' ? 'light' : t === 'DARK' ? 'dark' : null;
@@ -83,7 +131,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const [stage, setStage] = useState<Stage>(() => (tokens.hasSession ? 'locked' : 'signedOut'));
-  const [resuming, setResuming] = useState(() => tokens.hasSession && readPaystackHandoff());
+  const [resuming, setResuming] = useState(() => tokens.hasSession && (readPaystackHandoff() || recentlyActive()));
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [failed, setFailed] = useState(0);
@@ -101,7 +149,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // Back from Paystack in the same tab: straight to the payment result.
+  // Refreshed or reopened within the idle limit, or back from Paystack: carry on unlocked.
   useEffect(() => {
     try {
       sessionStorage.removeItem(HANDOFF_KEY); // it works once
@@ -123,6 +171,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(
     (message: string | null) => {
+      clearActivity();
       tokens.clear();
       queryClient.clear();
       setProfileState(null);
@@ -210,6 +259,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const lock = useCallback(() => {
+    clearActivity();
     if (tokens.hasSession) setStage((s) => (s === 'unlocked' ? 'locked' : s));
   }, []);
 
@@ -308,19 +358,31 @@ export function useIdleLock() {
   const minutes = saved > 0 ? Math.max(saved, MIN_LOCK_MINUTES) : saved;
 
   useEffect(() => {
-    if (stage !== 'unlocked' || minutes <= 0) return;
+    if (stage !== 'unlocked') return;
+    const limit = minutes > 0 ? minutes * 60_000 : 0;
     last.current = Date.now();
-    const limit = minutes * 60_000;
-    const touch = () => (last.current = Date.now());
+    noteActivity(limit, last.current);
+    if (limit === 0) return; // switched off: a refresh still carries on unlocked
+    let written = last.current;
+    const touch = () => {
+      last.current = Date.now();
+      // Shared with a refresh and other tabs; a few seconds' lag is plenty.
+      if (last.current - written > 5_000) {
+        written = last.current;
+        noteActivity(limit, written);
+      }
+    };
+    // Activity in another tab keeps this one open too.
+    const idleFor = () => Date.now() - Math.max(last.current, readActivity()?.at ?? 0);
     const events = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'wheel', 'touchstart'] as const;
     events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && Date.now() - last.current >= limit) lock();
+      if (document.visibilityState === 'visible' && idleFor() >= limit) lock();
       else if (document.visibilityState === 'visible') touch();
     };
     document.addEventListener('visibilitychange', onVisible);
     const timer = window.setInterval(() => {
-      if (Date.now() - last.current >= limit) lock();
+      if (idleFor() >= limit) lock();
     }, 10_000);
     return () => {
       events.forEach((e) => window.removeEventListener(e, touch));
