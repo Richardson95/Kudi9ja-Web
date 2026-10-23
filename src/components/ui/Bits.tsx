@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { cn, copyText } from '../../lib/cn';
+import { formatNumber } from '../../lib/format';
 import { useToast } from './Toast';
 
 export type Tone = 'gold' | 'success' | 'danger' | 'info' | 'neutral';
@@ -223,7 +224,7 @@ export function Segmented<T extends string>({
             {o.label}
             {!!o.count && (
               <span className="grid min-w-[20px] place-items-center rounded-full bg-danger px-1.5 text-[10.5px] font-extrabold leading-5 text-white">
-                {o.count}
+                {formatNumber(o.count)}
               </span>
             )}
           </button>

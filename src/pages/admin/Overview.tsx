@@ -6,7 +6,7 @@ import { Card, SectionHeader } from '../../components/ui/Card';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminApplications, useOverview } from '../../hooks/queries';
 import { useSupportSummary } from '../../hooks/support';
-import { naira, nairaShort, relative } from '../../lib/format';
+import { formatNumber, naira, nairaShort, relative } from '../../lib/format';
 import { auditStyle } from '../../lib/labels';
 import { useProfile } from '../../state/session';
 import { firstName } from '../../lib/format';
@@ -39,11 +39,11 @@ export default function Overview() {
               <IconBadge size={38} tone={q.count ? 'gold' : 'neutral'}>{q.icon}</IconBadge>
               {!!q.late && (
                 <span className="flex items-center gap-1 text-[12px] font-bold text-danger">
-                  <AlarmClock className="h-3.5 w-3.5" /> {q.late} late
+                  <AlarmClock className="h-3.5 w-3.5" /> {formatNumber(q.late)} late
                 </span>
               )}
             </div>
-            <p className="num mt-3 text-3xl font-extrabold">{q.count}</p>
+            <p className="num mt-3 text-3xl font-extrabold">{formatNumber(q.count)}</p>
             <p className="text-[13px] text-ink-2">{q.label}</p>
             {q.value !== undefined && <p className="num text-[12px] text-ink-3">{naira(q.value)}</p>}
           </Link>
@@ -52,13 +52,13 @@ export default function Overview() {
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatTile label="Customer money held" value={nairaShort(o.customerFundsHeld)} icon={<Wallet />} footnote="Wallet balances" />
-        <StatTile label="Saved" value={nairaShort(o.book.totalSaved)} icon={<PiggyBank />} tone="info" footnote={`${o.book.activePlans} active plans`} />
-        <StatTile label="Lent" value={nairaShort(o.book.totalLent)} icon={<CreditCard />} footnote={`${o.book.activeLoans} active · ${o.book.repaidLoans} repaid`} />
-        <StatTile label="Overdue" value={nairaShort(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.overdueLoans ? 'danger' : 'neutral'} footnote={`${o.book.overdueLoans} loans`} />
+        <StatTile label="Saved" value={nairaShort(o.book.totalSaved)} icon={<PiggyBank />} tone="info" footnote={`${formatNumber(o.book.activePlans)} active plans`} />
+        <StatTile label="Lent" value={nairaShort(o.book.totalLent)} icon={<CreditCard />} footnote={`${formatNumber(o.book.activeLoans)} active · ${formatNumber(o.book.repaidLoans)} repaid`} />
+        <StatTile label="Overdue" value={nairaShort(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.overdueLoans ? 'danger' : 'neutral'} footnote={`${formatNumber(o.book.overdueLoans)} loans`} />
         <StatTile label="Interest charged" value={nairaShort(o.book.totalInterestCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Fees charged" value={nairaShort(o.book.totalFeesCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Interest paid out" value={nairaShort(o.book.totalInterestPaid)} icon={<PiggyBank />} />
-        <StatTile label="Customers" value={String(o.people.customers)} icon={<Users />} footnote={`${o.people.newThisWeek} new this week · ${o.people.frozenCustomers} frozen`} />
+        <StatTile label="Customers" value={formatNumber(o.people.customers)} icon={<Users />} footnote={`${formatNumber(o.people.newThisWeek)} new this week · ${formatNumber(o.people.frozenCustomers)} frozen`} />
       </div>
 
       <Card padded={false}>

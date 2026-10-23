@@ -1,6 +1,7 @@
-import { forwardRef, useId, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, useEffect, useId, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { formatNumber, formatNumberInput, parseAmount } from '../../lib/format';
 
 const control =
   'w-full rounded-xl border bg-surface px-4 text-[15px] text-ink placeholder:text-ink-3 outline-none transition ' +
@@ -49,6 +50,38 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix
   suffix?: ReactNode;
   wrapperClassName?: string;
   showCount?: boolean;
+}
+
+interface NumberInputProps extends Omit<InputProps, 'value' | 'onChange' | 'type' | 'inputMode'> {
+  value: number | null | undefined;
+  /** null when the box is cleared. */
+  onChange: (value: number | null) => void;
+  /** Digits allowed after the point; 0 for whole numbers. */
+  decimals?: number;
+}
+
+/**
+ * A number typed with thousands separators shown as you go: 5000000 reads
+ * "5,000,000". The figure handed back is a plain number.
+ */
+export function NumberInput({ value, onChange, decimals = 2, ...rest }: NumberInputProps) {
+  const [text, setText] = useState(() => formatNumber(value, decimals));
+  // Follow changes made elsewhere (loading, resetting), not the ones typed here.
+  useEffect(() => {
+    setText((t) => (parseAmount(t) === (value ?? 0) ? t : formatNumber(value, decimals)));
+  }, [value, decimals]);
+  return (
+    <Input
+      {...rest}
+      inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+      value={text}
+      onChange={(e) => {
+        const next = formatNumberInput(e.target.value, decimals);
+        setText(next);
+        onChange(next === '' ? null : parseAmount(next));
+      }}
+    />
+  );
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(

@@ -1,4 +1,5 @@
 import { cn } from '../../lib/cn';
+import { formatNumber } from '../../lib/format';
 import { Avatar } from '../ui/Bits';
 import { Skeleton } from '../ui/Spinner';
 import { useOfficerOptions } from './OfficersPanel';
@@ -27,7 +28,7 @@ export function OfficerPicker({ value, onChange }: { value: string; onChange: (i
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold">{o.name}</span>
               <span className="block truncate text-[11.5px] text-ink-3">
-                {o.roleLabel} · {o.borrowers} borrower{o.borrowers === 1 ? '' : 's'}
+                {o.roleLabel} · {formatNumber(o.borrowers)} borrower{o.borrowers === 1 ? '' : 's'}
               </span>
             </span>
           </button>

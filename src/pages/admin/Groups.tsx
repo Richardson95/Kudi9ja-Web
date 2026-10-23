@@ -13,7 +13,7 @@ import { Skeleton } from '../../components/ui/Spinner';
 import { useAction } from '../../hooks/useAction';
 import { keys } from '../../hooks/queries';
 import { groupsApi } from '../../lib/api/endpoints';
-import { nairaShort } from '../../lib/format';
+import { formatNumber, nairaShort } from '../../lib/format';
 import { useSession } from '../../state/session';
 
 const groupKeys = { list: keys.admin.groups };
@@ -77,7 +77,7 @@ export default function Groups() {
                 <Figure label="Owed" value={nairaShort(g.outstanding)} />
               </div>
               <p className="mt-3 text-[11.5px] text-ink-3">
-                {g.signedUp} of {g.members} signed up{g.overdueMembers ? ` · ${g.overdueMembers} overdue` : ''}
+                {formatNumber(g.signedUp)} of {formatNumber(g.members)} signed up{g.overdueMembers ? ` · ${formatNumber(g.overdueMembers)} overdue` : ''}
               </p>
             </Link>
           ))}

@@ -16,7 +16,7 @@ import {
   targetRateFor,
   targetRuns,
 } from './finance';
-import { formatAmountInput, humanPeriod, lockPeriodLabel, naira, nairaShort, parseAmount, ratePct } from './format';
+import { formatAmountInput, formatNumber, formatNumberInput, humanPeriod, lockPeriodLabel, naira, nairaShort, parseAmount, ratePct } from './format';
 import { passwordScore, sameName, validators } from './validators';
 
 /** The shipped defaults from the README. */
@@ -209,6 +209,22 @@ describe('Formatting', () => {
   it('formats and parses typed amounts', () => {
     expect(formatAmountInput('001500000')).toBe('1,500,000');
     expect(parseAmount('1,500,000')).toBe(1_500_000);
+  });
+
+  it('formats typed numbers that may have decimals', () => {
+    expect(formatNumberInput('5000000')).toBe('5,000,000');
+    expect(formatNumberInput('12.')).toBe('12.');
+    expect(formatNumberInput('1234.567')).toBe('1,234.56');
+    expect(formatNumberInput('.5')).toBe('0.5');
+    expect(formatNumberInput('1.2.3')).toBe('1.23');
+    expect(formatNumberInput('12.5', 0)).toBe('12');
+    expect(parseAmount(formatNumberInput('2,500.75'))).toBe(2500.75);
+  });
+
+  it('formats numbers for display', () => {
+    expect(formatNumber(1_500_000)).toBe('1,500,000');
+    expect(formatNumber(12.5)).toBe('12.5');
+    expect(formatNumber(null)).toBe('');
   });
 });
 

@@ -16,7 +16,7 @@ import { keys } from '../../hooks/queries';
 
 const groupKeys = { list: keys.admin.groups, detail: keys.admin.group };
 import { groupsApi } from '../../lib/api/endpoints';
-import { asDay, naira } from '../../lib/format';
+import { asDay, formatNumber, naira } from '../../lib/format';
 import { useSession } from '../../state/session';
 import type { LoanGroup } from '../../types/api';
 
@@ -86,10 +86,10 @@ export default function GroupDetail() {
       {g.description && <p className="text-[13.5px] text-ink-2">{g.description}</p>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Members" value={String(g.members)} footnote={`${g.signedUp} signed up`} />
+        <StatTile label="Members" value={formatNumber(g.members)} footnote={`${formatNumber(g.signedUp)} signed up`} />
         <StatTile label="Lent" value={naira(g.totalLent)} tone="info" />
         <StatTile label="Still owed" value={naira(g.outstanding)} />
-        <StatTile label="Overdue" value={String(g.overdueMembers)} tone={g.overdueMembers ? 'danger' : 'neutral'} footnote="members" />
+        <StatTile label="Overdue" value={formatNumber(g.overdueMembers)} tone={g.overdueMembers ? 'danger' : 'neutral'} footnote="members" />
       </div>
 
       <Card padded={false} className="overflow-x-auto">

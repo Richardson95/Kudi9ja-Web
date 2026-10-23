@@ -49,6 +49,25 @@ export function formatAmountInput(raw: string): string {
   return digits ? Number(digits).toLocaleString('en-NG') : '';
 }
 
+/**
+ * Like formatAmountInput, but a decimal point is allowed: "1234.5" → "1,234.5".
+ * A trailing point stays while typing, so "12." can become "12.5".
+ */
+export function formatNumberInput(raw: string, maxDecimals = 2): string {
+  const clean = raw.replace(/[^\d.]/g, '');
+  const dot = clean.indexOf('.');
+  const whole = formatAmountInput(dot < 0 ? clean : clean.slice(0, dot));
+  if (dot < 0 || maxDecimals <= 0) return whole;
+  const fraction = clean.slice(dot + 1).replace(/\./g, '').slice(0, maxDecimals);
+  return `${whole || '0'}.${fraction}`;
+}
+
+/** A number for display with thousands separators: 1500000 → "1,500,000", 12.5 → "12.5". */
+export function formatNumber(value: number | null | undefined, maxDecimals = 2): string {
+  if (value == null || !Number.isFinite(value)) return '';
+  return value.toLocaleString('en-NG', { maximumFractionDigits: maxDecimals });
+}
+
 export function parseAmount(raw: string): number {
   const n = Number(raw.replace(/[^\d.]/g, ''));
   return Number.isFinite(n) ? n : 0;

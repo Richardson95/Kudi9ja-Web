@@ -6,13 +6,13 @@ import { Notice, Switch } from '../../components/ui/Bits';
 import { Button } from '../../components/ui/Button';
 import { Card, SectionHeader } from '../../components/ui/Card';
 import { useDialogs } from '../../components/ui/Dialogs';
-import { Input, Textarea } from '../../components/ui/Field';
+import { Input, NumberInput, Textarea } from '../../components/ui/Field';
 import { Modal } from '../../components/ui/Modal';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAction } from '../../hooks/useAction';
 import { keys, useAdminSettings } from '../../hooks/queries';
 import { adminApi } from '../../lib/api/endpoints';
-import { asDayTime } from '../../lib/format';
+import { asDayTime, formatNumber } from '../../lib/format';
 import { can } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import { settingsKey } from '../../state/settings';
@@ -100,18 +100,13 @@ export default function Controls() {
     const pct = PERCENT.includes(k);
     const value = draft[k] as number;
     return (
-      <Input
+      <NumberInput
         label={label}
         hint={hint}
-        type="number"
-        step={pct ? '0.01' : 'any'}
         disabled={!editable}
-        value={pct ? String(Math.round(value * 10000) / 100) : String(value)}
+        value={pct ? Math.round(value * 10000) / 100 : value}
         suffix={pct ? '%' : undefined}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          setDraft({ ...draft, [k]: pct ? n / 100 : n });
-        }}
+        onChange={(n) => setDraft({ ...draft, [k]: pct ? (n ?? 0) / 100 : (n ?? 0) })}
       />
     );
   };
@@ -164,16 +159,14 @@ export default function Controls() {
           {months.map((m) => {
             const r = card[String(m)];
             return (
-              <Input
+              <NumberInput
                 key={m}
                 label={`${m} month${m === 1 ? '' : 's'}`}
-                type="number"
-                step="0.01"
                 suffix="%"
                 disabled={!editable}
-                value={r == null ? '' : String(Math.round(r * 10000) / 100)}
+                value={r == null ? null : Math.round(r * 10000) / 100}
                 error={r == null ? 'Needs a rate' : undefined}
-                onChange={(e) => setDraft({ ...draft, [k.rates]: { ...card, [String(m)]: Number(e.target.value) / 100 } })}
+                onChange={(n) => setDraft({ ...draft, [k.rates]: { ...card, [String(m)]: (n ?? 0) / 100 } })}
               />
             );
           })}
@@ -312,7 +305,7 @@ function Announce({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const send = async () => {
-    const r = await run(() => adminApi.announce(title.trim(), body.trim()), (x) => `Sent to ${x.devices} device${x.devices === 1 ? '' : 's'}`);
+    const r = await run(() => adminApi.announce(title.trim(), body.trim()), (x) => `Sent to ${formatNumber(x.devices)} device${x.devices === 1 ? '' : 's'}`);
     if (r) {
       setTitle('');
       setBody('');

@@ -18,7 +18,7 @@ import { Input } from '../../components/ui/Field';
 import { useToast } from '../../components/ui/Toast';
 import { adminApi } from '../../lib/api/endpoints';
 import { downloadExcel, downloadPdf } from '../../lib/exports';
-import { isoDate } from '../../lib/format';
+import { formatNumber, isoDate } from '../../lib/format';
 import { can } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import type { ExportReportName } from '../../types/api';
@@ -76,7 +76,7 @@ export default function Reports() {
         return;
       }
       await (format === 'excel' ? downloadExcel(report) : downloadPdf(report));
-      toast.success(`${report.title} downloaded · ${report.rows.length} rows`);
+      toast.success(`${report.title} downloaded · ${formatNumber(report.rows.length)} rows`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'The report could not be downloaded. Try again.');
     } finally {

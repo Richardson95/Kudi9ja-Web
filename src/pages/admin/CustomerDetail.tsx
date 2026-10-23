@@ -16,7 +16,7 @@ import { useSupportQueue } from '../../hooks/support';
 import { useAction } from '../../hooks/useAction';
 import { keys } from '../../hooks/queries';
 import { adminApi, groupsApi } from '../../lib/api/endpoints';
-import { asDay, asDayTime, maskLast4, naira, relative } from '../../lib/format';
+import { asDay, asDayTime, formatNumber, maskLast4, naira, relative } from '../../lib/format';
 import { accountTone, applicationTone, can, depositTone, loanTone, paystackTone, payoutLabel, planTone, supportTone } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import type { AccountStatus, Loan } from '../../types/api';
@@ -114,7 +114,7 @@ export default function CustomerDetail() {
         <StatTile label="Wallet" value={naira(f.balance)} footnote={f.pendingWithdrawals ? `${naira(f.pendingWithdrawals)} withdrawing` : undefined} />
         <StatTile label="Saved" value={naira(f.totalSaved)} tone="info" footnote={`${f.activePlans} of ${f.totalPlans} plans active`} />
         <StatTile label="Owes" value={naira(f.totalOwed)} tone={f.overdueLoans ? 'danger' : 'neutral'} footnote={`${f.activeLoans} open · ${f.overdueLoans} overdue`} />
-        <StatTile label="Paid in, all time" value={naira(f.totalDeposited)} tone="success" footnote={`${f.transactionCount} transactions`} />
+        <StatTile label="Paid in, all time" value={naira(f.totalDeposited)} tone="success" footnote={`${formatNumber(f.transactionCount)} transactions`} />
       </div>
 
       <Segmented<Tab>

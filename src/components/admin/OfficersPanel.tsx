@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Crown, ShieldCheck, UserPlus, X } from 'lucide-react';
 import { officersApi } from '../../lib/api/endpoints';
 import { cn } from '../../lib/cn';
-import { asDay } from '../../lib/format';
+import { asDay, formatNumber } from '../../lib/format';
 import { can } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import { useAction } from '../../hooks/useAction';
@@ -186,7 +186,7 @@ export function OfficerChecklist({
                   {o.name} {index === 0 && picked.length > 1 && <Pill className="ml-1">First</Pill>}
                 </p>
                 <p className="truncate text-[12px] text-ink-3">
-                  {o.roleLabel} · {o.borrowers} borrower{o.borrowers === 1 ? '' : 's'}
+                  {o.roleLabel} · {formatNumber(o.borrowers)} borrower{o.borrowers === 1 ? '' : 's'}
                 </p>
               </div>
             </label>
