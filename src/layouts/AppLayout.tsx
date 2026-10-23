@@ -172,7 +172,9 @@ function SideLink({
 function TopBar({ supportUnread }: { supportUnread: number }) {
   const [menu, setMenu] = useState(false);
   const { pathname } = useLocation();
-  useEffect(() => setMenu(false), [pathname]);
+  useEffect(() => {
+    setMenu(false);
+  }, [pathname]);
   const dashboard = useDashboard();
   const unread = dashboard.data?.unreadNotifications ?? 0;
   const { resolved } = useTheme();
@@ -263,7 +265,9 @@ function AccountMenu() {
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
