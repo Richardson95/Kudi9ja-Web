@@ -19,6 +19,8 @@ export type Stage = 'signedOut' | 'locked' | 'unlocked';
 
 interface SessionApi {
   stage: Stage;
+  /** Coming back from Paystack: the profile is loading, the lock is skipped. */
+  resuming: boolean;
   profile: Profile | null;
   isAdmin: boolean;
   adminRole: AdminRole | null;
@@ -40,6 +42,38 @@ interface SessionApi {
 
 const SessionContext = createContext<SessionApi | null>(null);
 
+/**
+ * Paying in leaves the site for Paystack's checkout and comes back as a fresh
+ * visit, which would open on the passcode lock. Before leaving, the tab notes
+ * the payment; coming back to the return page with that same reference within
+ * this window skips the lock once.
+ */
+const HANDOFF_KEY = 'k9.handoff';
+const HANDOFF_MINUTES = 30;
+const RETURN_PATH = '/app/wallet/paystack';
+
+export function markPaystackHandoff(reference: string) {
+  try {
+    sessionStorage.setItem(HANDOFF_KEY, JSON.stringify({ reference, at: Date.now() }));
+  } catch {
+    // Storage blocked: the customer enters the passcode on return instead.
+  }
+}
+
+/** Whether this visit is the return from Paystack. The provider then spends the note. */
+function readPaystackHandoff(): boolean {
+  try {
+    const raw = sessionStorage.getItem(HANDOFF_KEY);
+    if (!raw || window.location.pathname !== RETURN_PATH) return false;
+    const { reference, at } = JSON.parse(raw) as { reference?: string; at?: number };
+    const params = new URLSearchParams(window.location.search);
+    const back = params.get('reference') ?? params.get('trxref');
+    return !!reference && reference === back && typeof at === 'number' && Date.now() - at < HANDOFF_MINUTES * 60_000;
+  } catch {
+    return false;
+  }
+}
+
 const themeToApi = (c: ThemeChoice): ThemeMode => (c === 'system' ? 'SYSTEM' : c === 'light' ? 'LIGHT' : 'DARK');
 const themeFromApi = (t?: ThemeMode): ThemeChoice | null =>
   t === 'SYSTEM' ? 'system' : t === 'LIGHT' ? 'light' : t === 'DARK' ? 'dark' : null;
@@ -49,6 +83,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const [stage, setStage] = useState<Stage>(() => (tokens.hasSession ? 'locked' : 'signedOut'));
+  const [resuming, setResuming] = useState(() => tokens.hasSession && readPaystackHandoff());
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [failed, setFailed] = useState(0);
@@ -65,6 +100,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // Back from Paystack in the same tab: straight to the payment result.
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(HANDOFF_KEY); // it works once
+    } catch {
+      // storage blocked: there was no note
+    }
+    if (!resuming) return;
+    meApi
+      .profile()
+      .then((me) => {
+        applyProfile(me);
+        setStage('unlocked');
+      })
+      .catch(() => undefined) // falls back to the passcode screen
+      .finally(() => setResuming(false));
+    // runs once, on the first render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const reset = useCallback(
     (message: string | null) => {
@@ -202,6 +257,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<SessionApi>(
     () => ({
       stage,
+      resuming,
       profile,
       isAdmin: !!profile?.admin,
       adminRole: profile?.admin ? (profile.adminRole ?? null) : null,
@@ -218,7 +274,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setThemeChoice,
       setHideBalance,
     }),
-    [stage, profile, notice, maxAttempts, failed, signIn, enterFromSignup, unlock, lock, signOut, applyProfile, refreshProfile, setThemeChoice, setHideBalance],
+    [stage, resuming, profile, notice, maxAttempts, failed, signIn, enterFromSignup, unlock, lock, signOut, applyProfile, refreshProfile, setThemeChoice, setHideBalance],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

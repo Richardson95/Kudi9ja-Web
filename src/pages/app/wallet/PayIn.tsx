@@ -13,6 +13,7 @@ import { useLoans, usePaystackEnabled } from '../../../hooks/queries';
 import { walletApi } from '../../../lib/api/endpoints';
 import { formatAmountInput, naira, parseAmount } from '../../../lib/format';
 import { isLoanOpen } from '../../../lib/labels';
+import { markPaystackHandoff } from '../../../state/session';
 import { useSettings } from '../../../state/settings';
 import type { DepositPurpose } from '../../../types/api';
 
@@ -63,6 +64,7 @@ export default function PayIn() {
       } catch {
         // only a convenience for the return page
       }
+      markPaystackHandoff(checkout.reference);
       window.location.assign(checkout.authorizationUrl);
       return checkout;
     });

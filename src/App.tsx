@@ -71,12 +71,12 @@ function ScrollToTop() {
 
 /** Customer and admin areas: signed out goes to sign-in; locked shows the passcode screen in place. */
 function RequireSession({ children }: { children: ReactNode }) {
-  const { stage } = useSession();
+  const { stage, resuming } = useSession();
   const location = useLocation();
   if (stage === 'signedOut') {
     return <Navigate to={`/signin?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   }
-  if (stage === 'locked') return <LockScreen />;
+  if (stage === 'locked') return resuming ? <PageSpinner /> : <LockScreen />;
   return <>{children}</>;
 }
 
