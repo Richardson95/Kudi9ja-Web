@@ -336,6 +336,9 @@ export interface ScheduleRow {
   status: InstallmentStatus;
   statusLabel: string;
   daysUntilDue: number;
+  /** The share of the loan and interest in this instalment, and the transaction fee in it. */
+  base: Naira;
+  fee: Naira;
 }
 
 /** How often a loan is repaid. Monthly unless the borrower chose weekly. */
@@ -365,6 +368,16 @@ export interface Loan {
   /** How many instalments: one a month, or one a week. */
   installmentCount: number;
   installmentAmount: Naira;
+  /** One instalment's share of the loan and interest, and the transaction fee on top. */
+  installmentBase: Naira;
+  installmentFee: Naira;
+  /** The transaction fee on every repayment, as a fraction: 0.02 for 2%. */
+  repaymentFeeRate: number;
+  repaymentFeeRateLabel: string;
+  /** What the transaction fees on all the instalments add up to. */
+  totalRepaymentFees: Naira;
+  /** The loan and its interest, before the transaction fees. */
+  loanAndInterest: Naira;
   amountRepaid: Naira;
   rebateGranted: Naira;
   outstanding: Naira;
@@ -390,6 +403,16 @@ export interface LoanQuote {
   /** How many instalments: one a month, or one a week. */
   installmentCount: number;
   installmentAmount: Naira;
+  /** One instalment's share of the loan and interest, and the transaction fee on top. */
+  installmentBase: Naira;
+  installmentFee: Naira;
+  /** The transaction fee on every repayment, as a fraction: 0.02 for 2%. */
+  repaymentFeeRate: number;
+  repaymentFeeRateLabel: string;
+  /** What the transaction fees on all the instalments add up to. */
+  totalRepaymentFees: Naira;
+  /** The loan and its interest, before the transaction fees. */
+  loanAndInterest: Naira;
   processingFee: Naira;
   processingFeeBasis: string;
   transactionFee: Naira;
@@ -409,6 +432,10 @@ export interface Eligibility {
   maxMonths: number;
   rateCard: Record<string, number>;
   reason?: string;
+  /** True when this customer borrows on the loan-group terms. */
+  groupPricing: boolean;
+  /** Everything that prices this customer's loan. */
+  terms: LendingTerms;
 }
 
 export interface RepaymentResponse {
@@ -487,6 +514,8 @@ export interface AdminApplicationDetail extends AdminApplicationRow {
   businessPhotos: ApplicationDocument[];
   rejectionReason?: string;
   loanId?: string;
+  /** True when the applicant borrows on the loan-group terms. */
+  groupPricing: boolean;
 }
 
 // ── Thrift ──────────────────────────────────────────────────────────────────
@@ -587,6 +616,21 @@ export interface ReviewSummary {
 
 // ── Reference data ──────────────────────────────────────────────────────────
 
+/** Everything that prices a loan: the standard set, or the loan-group set. */
+export interface LendingTerms {
+  rates: Record<string, number>;
+  maxTenureMonths: number;
+  minAmount: Naira;
+  maxAmount: Naira;
+  flatProcessingFee: Naira;
+  processingFeeThreshold: Naira;
+  processingFeeRate: number;
+  /** The transaction fee on each repayment, as a fraction of the instalment: 0.02 for 2%. */
+  repaymentFeeRate: number;
+  weeklyAllowed: boolean;
+  monthlyAllowed: boolean;
+}
+
 export interface PublicSettings {
   version: number;
   savings: {
@@ -604,17 +648,9 @@ export interface PublicSettings {
     minTargetMonths: number;
     daysPerSavingsMonth: number;
   };
-  lending: {
-    rates: Record<string, number>;
-    maxTenureMonths: number;
-    minAmount: Naira;
-    maxAmount: Naira;
-    flatProcessingFee: Naira;
-    processingFeeThreshold: Naira;
-    processingFeeRate: number;
-    /** Flat, on every loan, beside the management fee. */
-    transactionFee: number;
-  };
+  lending: LendingTerms;
+  /** What members of a loan group borrow on. */
+  groupLending: LendingTerms;
   wallet: { minDepositAmount: Naira; minWithdrawalAmount: Naira };
   thrift: { minContribution: Naira; minMembers: number; maxMembers: number };
   collectionAccount: { bank: string; accountNumber: string; accountName: string };
@@ -834,8 +870,14 @@ export interface ImportedLoan {
   flatRate: number;
   /** The management fee taken when the loan was given. */
   processingFee: Naira;
-  /** The transaction fee taken when the loan was given. */
+  /** A flat transaction fee taken when the loan was given — older loans only. */
   transactionFee: Naira;
+  /** The transaction fee on each repayment, as a fraction, and what those fees add up to. */
+  repaymentFeeRate: number;
+  repaymentFees: Naira;
+  installmentCount: number;
+  /** Instalments in whole naira, rounded up — every loan since the repayment fee. */
+  wholeNaira: boolean;
   /** What the borrower actually received: the loan less both fees. */
   netDisbursed: Naira;
   purpose: string;
@@ -932,8 +974,10 @@ export interface ImportLoanInput {
   phone?: string;
   principal: number;
   tenureMonths: number;
-  repaymentFrequency?: RepaymentFrequency;
+  repaymentFrequency: RepaymentFrequency;
   flatRate: number;
+  /** The transaction fee on each repayment, as a fraction: 0.02 for 2%. */
+  repaymentFeeRate?: number;
   processingFee?: number;
   transactionFee?: number;
   purpose: string;
@@ -1042,7 +1086,20 @@ export interface PlatformSettings {
   flatProcessingFee: Naira;
   processingFeeThreshold: Naira;
   loanProcessingFeeRate: number;
-  loanTransactionFee: number;
+  loanRepaymentFeeRate: number;
+  loanWeeklyAllowed: boolean;
+  loanMonthlyAllowed: boolean;
+  /** Group loans: their own copy of everything above. */
+  groupLoanRates: Record<string, number>;
+  groupMaxLoanTenureMonths: number;
+  groupMinLoanAmount: Naira;
+  groupMaxLoanAmount: Naira;
+  groupFlatProcessingFee: Naira;
+  groupProcessingFeeThreshold: Naira;
+  groupLoanProcessingFeeRate: number;
+  groupLoanRepaymentFeeRate: number;
+  groupLoanWeeklyAllowed: boolean;
+  groupLoanMonthlyAllowed: boolean;
   maxPasscodeAttempts: number;
   lockTimeoutMinutes: number;
   otpResendSeconds: number;

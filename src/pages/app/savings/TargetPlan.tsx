@@ -7,7 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
 import { useDialogs } from '../../../components/ui/Dialogs';
 import { Input } from '../../../components/ui/Field';
-import { AmountInput, FieldLabel, QuickAmounts, RangeSlider } from '../../../components/ui/Inputs';
+import { AmountInput, FieldLabel, QuickAmounts, NumberField } from '../../../components/ui/Inputs';
 import { useAction } from '../../../hooks/useAction';
 import { useRefresh } from '../../../hooks/queries';
 import { savingsApi } from '../../../lib/api/endpoints';
@@ -137,7 +137,7 @@ export default function TargetPlan() {
               <FieldLabel>For how long?</FieldLabel>
               <span className="text-sm font-extrabold text-gold">{monthsLabel(term)}</span>
             </div>
-            <RangeSlider label="Months" value={term} min={s.savings.minTargetMonths} max={maxMonths} onChange={setTerm} />
+            <NumberField label="Months" value={term} min={s.savings.minTargetMonths} max={maxMonths} onChange={setTerm} />
             <p className="mt-2 text-[12px] text-ink-3">
               Bonus: {rateOf(s.savings.targetRateShort)} under {s.savings.targetTierMedium} months · {rateOf(s.savings.targetRateMedium)} from{' '}
               {s.savings.targetTierMedium} · {rateOf(s.savings.targetRateLong)} from {s.savings.targetTierLong}

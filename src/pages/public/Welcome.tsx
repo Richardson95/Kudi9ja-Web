@@ -121,7 +121,7 @@ export default function Welcome() {
             points={[
               `${ratePct(loanRateFor(s, 1) * 100)} flat over 1 month`,
               `Borrow ₦200,000 → ${nairaFlat(example.net)} in your wallet`,
-              'Repay early and half the unused interest comes back',
+              'Repay weekly or monthly',
             ]}
           />
           <Product

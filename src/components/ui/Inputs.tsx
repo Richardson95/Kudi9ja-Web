@@ -65,7 +65,12 @@ export function QuickAmounts({ amounts, onPick, className }: { amounts: number[]
   );
 }
 
-export function RangeSlider({
+/**
+ * A number typed in, kept between `min` and `max`. Used where a slider used to
+ * be: the figure is typed, not dragged. While typing, anything goes; a figure
+ * outside the range is pulled back into it when the box is left.
+ */
+export function NumberField({
   value,
   min,
   max,
@@ -82,20 +87,42 @@ export function RangeSlider({
   disabled?: boolean;
   label: string;
 }) {
-  const pct = max > min ? ((Math.min(Math.max(value, min), max) - min) / (max - min)) * 100 : 0;
+  const [text, setText] = useState(String(value));
+  useEffect(() => setText(String(value)), [value]);
+  const clamp = (n: number) => Math.min(Math.max(Math.round(n / step) * step, min), max);
+  const commit = (raw: string) => {
+    const n = Number(raw);
+    if (raw.trim() === '' || Number.isNaN(n)) {
+      setText(String(value));
+      return;
+    }
+    const v = clamp(n);
+    setText(String(v));
+    if (v !== value) onChange(v);
+  };
   return (
-    <input
-      type="range"
-      aria-label={label}
-      min={min}
-      max={max}
-      step={step}
-      value={Math.min(Math.max(value, min), max)}
-      disabled={disabled}
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="h-2 w-full cursor-pointer appearance-none rounded-full disabled:cursor-not-allowed disabled:opacity-50 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-gold [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:shadow-[0_0_0_5px_rgb(var(--gold)/0.18)]"
-      style={{ background: `linear-gradient(to right, rgb(var(--gold)) ${pct}%, rgb(var(--surface-high)) ${pct}%)` }}
-    />
+    <div className="flex items-center gap-3">
+      <input
+        type="number"
+        inputMode="numeric"
+        aria-label={label}
+        min={min}
+        max={max}
+        step={step}
+        value={text}
+        disabled={disabled}
+        onChange={(e) => {
+          setText(e.target.value);
+          const n = Number(e.target.value);
+          if (e.target.value.trim() !== '' && !Number.isNaN(n) && n >= min && n <= max) onChange(n);
+        }}
+        onBlur={(e) => commit(e.target.value)}
+        className="num h-12 w-32 rounded-xl border border-stroke bg-surface-alt px-4 text-lg font-extrabold outline-none transition focus:border-gold disabled:opacity-50"
+      />
+      <span className="text-[12.5px] text-ink-3">
+        {label} · {min} to {max}
+      </span>
+    </div>
   );
 }
 

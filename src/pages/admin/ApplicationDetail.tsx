@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction';
 import { keys, useRefresh } from '../../hooks/queries';
 import { adminApi } from '../../lib/api/endpoints';
 import { asDay, asDayTime, naira } from '../../lib/format';
-import { eachInstalment, instalmentsPhrase, loanPreview, perInstalment } from '../../lib/finance';
+import { eachInstalment, feeRateLabel, instalmentsPhrase, loanPreview, perInstalment } from '../../lib/finance';
 import { applicationTone, can } from '../../lib/labels';
 import { useSession } from '../../state/session';
 import { useSettings } from '../../state/settings';
@@ -30,7 +30,9 @@ export default function ApplicationDetail() {
   if (app.isLoading) return <PageSpinner />;
   const a = app.data;
   if (!a) return <EmptyState icon={<ClipboardList />} title="Application not found" />;
-  const p = loanPreview(s, a.amount, a.tenureMonths, a.repaymentFrequency);
+  // A member of a loan group is priced on the group terms.
+  const terms = a.groupPricing ? { ...s, lending: s.groupLending } : s;
+  const p = loanPreview(terms, a.amount, a.tenureMonths, a.repaymentFrequency);
   const decide = can.actOnLoans(adminRole) && a.status === 'PENDING';
 
   const docs: DocItem[] = [
@@ -49,7 +51,7 @@ export default function ApplicationDetail() {
   const approve = async () => {
     const ok = await dialogs.confirm({
       title: `Approve ${naira(a.amount)} for ${a.customerName}?`,
-      message: `${naira(p.net)} goes into their Kudi9ja wallet now, after the ${naira(p.fee)} management fee and ${naira(p.transactionFee)} transaction fee. They repay ${naira(p.each)} ${perInstalment(p.frequency)} — ${instalmentsPhrase(p.frequency, a.tenureMonths)} over ${a.tenureMonths} months. If they have no loan officer yet, you become it.`,
+      message: `${naira(p.net)} goes into their Kudi9ja wallet now, after the ${naira(p.fee)} management fee. They repay ${naira(p.each)} ${perInstalment(p.frequency)} (${naira(p.base)} + ${naira(p.instalmentFee)} transaction fee) — ${instalmentsPhrase(p.frequency, a.tenureMonths)}, ${naira(p.total)} in all. The exact count is fixed today. If they have no loan officer yet, you become it.`,
       confirmLabel: 'Approve and pay out',
     });
     if (ok && (await run(() => adminApi.approveApplication(id), 'Approved — the money is in their wallet'))) {
@@ -98,12 +100,14 @@ export default function ApplicationDetail() {
             rows={[
               ['Amount', naira(a.amount)],
               ['Term', `${a.tenureMonths} months`],
+              ['Priced on', a.groupPricing ? 'Loan group terms' : 'Standard terms'],
               ['Repaid', instalmentsPhrase(p.frequency, a.tenureMonths)],
               ['Purpose', a.purpose],
               ['Rate today', `${Math.round(p.rate * 10000) / 100}% flat`],
-              [eachInstalment(p.frequency), naira(p.each)],
+              [eachInstalment(p.frequency), `${naira(p.each)} (${naira(p.base)} + ${naira(p.instalmentFee)} fee)`],
+              [`Transaction fees (${feeRateLabel(p.feeRate)} of each repayment)`, naira(p.fees)],
+              ['Total to repay', naira(p.total)],
               ['Management fee', naira(p.fee)],
-              ['Transaction fee', naira(p.transactionFee)],
               { label: 'Paid out', value: naira(p.net), bold: true },
             ]}
           />

@@ -75,31 +75,49 @@ export function feeFor(rule: { flat: number; threshold: number; rate: number }, 
 
 export interface LoanPreview {
   rate: number;
+  /** Flat interest, whole naira, rounded up. */
   interest: number;
+  /** The loan and its interest, before the transaction fees. */
+  loanTotal: number;
+  /** The transaction fee on every instalment, added up. */
+  fees: number;
+  /** Everything repaid: the loan, the interest and every transaction fee. */
   total: number;
-  monthly: number;
-  /** How often they repay, how many times, and how much each time. */
+  /** How often they repay, and how many times. */
   frequency: RepaymentFrequency;
   count: number;
+  /** One instalment, fee included, and its two parts. The last can be a little smaller. */
   each: number;
-  /** The management fee. */
+  base: number;
+  instalmentFee: number;
+  /** The transaction fee rate on each repayment: 0.02 for 2%. */
+  feeRate: number;
+  /** The management fee — the only thing taken off the payout. */
   fee: number;
-  /** The flat transaction fee. */
-  transactionFee: number;
   net: number;
 }
 
-/** The flat transaction fee on every loan, beside the management fee. */
-export const transactionFee = (s: PublicSettings): number => s.lending.transactionFee ?? 0;
+/** The transaction fee on each repayment, as a fraction of the instalment: 0.02 for 2%. */
+export const repaymentFeeRate = (s: PublicSettings): number => s.lending.repaymentFeeRate ?? 0;
+
+/** "2%". */
+export const feeRateLabel = (rate: number) => `${Math.round(rate * 10000) / 100}%`;
+
+/** Rounds up to the whole naira, ignoring floating-point dust (10,417.000000001 is 10,417). */
+const ceilNaira = (v: number) => Math.ceil(Math.round(v * 1e6) / 1e6);
 
 /**
- * How many instalments a tenure of `months` is split into: one a month, or one
- * a week for as many weeks as the months hold (4, 13, 26, 52 for 1, 3, 6, 12).
- * Mirrors `RepaymentFrequency` on the server.
+ * How many instalments a tenure of `months` starting at `start` is split into:
+ * one a month, or one for each whole week the calendar holds between `start`
+ * and the same date `months` later — 13 for most three-month loans, 12 when
+ * the months are short. Mirrors `RepaymentFrequency` on the server; the loan
+ * fixes its count on the day it is paid out.
  */
-export function instalmentCount(frequency: RepaymentFrequency, months: number): number {
+export function instalmentCount(frequency: RepaymentFrequency, months: number, start: Date = new Date()): number {
   if (months <= 0) return 0;
-  return frequency === 'WEEKLY' ? Math.round((months * 52) / 12) : months;
+  if (frequency === 'MONTHLY') return months;
+  const days = Math.round((addMonths(start, months).getTime() - start.getTime()) / 86_400_000);
+  return Math.max(1, Math.floor(days / 7));
 }
 
 /** "a week" or "a month". */
@@ -109,8 +127,8 @@ export const perInstalment = (frequency: RepaymentFrequency) => (frequency === '
 export const eachInstalment = (frequency: RepaymentFrequency) => (frequency === 'WEEKLY' ? 'Each week' : 'Each month');
 
 /** "13 weekly payments" or "3 monthly payments". */
-export const instalmentsPhrase = (frequency: RepaymentFrequency, months: number) => {
-  const n = instalmentCount(frequency, months);
+export const instalmentsPhrase = (frequency: RepaymentFrequency, months: number, start: Date = new Date()) => {
+  const n = instalmentCount(frequency, months, start);
   return `${n} ${frequency === 'WEEKLY' ? 'weekly' : 'monthly'} payment${n === 1 ? '' : 's'}`;
 };
 
@@ -126,24 +144,64 @@ export function instalmentDue(frequency: RepaymentFrequency, disbursedAt: Date, 
   return frequency === 'WEEKLY' ? new Date(disbursedAt.getTime() + n * 7 * 86_400_000) : addMonths(disbursedAt, n);
 }
 
-export function loanPreview(s: PublicSettings, principal: number, months: number, frequency: RepaymentFrequency = 'MONTHLY'): LoanPreview {
+export interface InstalmentPart {
+  base: number;
+  fee: number;
+}
+
+/**
+ * Splits the loan and interest into `count` instalments and puts the
+ * transaction fee on each. In whole naira, as loans are now priced: each share
+ * rounded up, the last taking what is left, and the fee on each `feeRate` of
+ * its share, rounded up. ₦125,000 over 12 weeks at 2% is ₦10,417 + ₦209 a week.
+ * Mirrors `Finance.instalmentPlan` on the server.
+ */
+export function instalmentPlan(loanTotal: number, count: number, feeRate: number, wholeNaira = true): InstalmentPart[] {
+  if (count <= 0) return [];
+  const round2 = (v: number) => Math.round(v * 100) / 100;
+  let each = wholeNaira ? ceilNaira(loanTotal / count) : round2(loanTotal / count);
+  let last = round2(loanTotal - each * (count - 1));
+  if (wholeNaira && last <= 0) {
+    each = Math.floor(loanTotal / count);
+    last = round2(loanTotal - each * (count - 1));
+  }
+  return Array.from({ length: count }, (_, i) => {
+    const base = i === count - 1 ? last : each;
+    const fee = wholeNaira ? ceilNaira(base * feeRate) : round2(base * feeRate);
+    return { base, fee };
+  });
+}
+
+export function loanPreview(
+  s: PublicSettings,
+  principal: number,
+  months: number,
+  frequency: RepaymentFrequency = 'WEEKLY',
+  start: Date = new Date(),
+): LoanPreview {
   const rate = loanRateFor(s, months);
-  const interest = principal * rate;
-  const total = principal + interest;
+  const loanTotal = principal > 0 ? ceilNaira(principal * (1 + rate)) : 0;
+  const interest = loanTotal - principal;
+  const feeRate = repaymentFeeRate(s);
+  const count = instalmentCount(frequency, months, start);
+  const plan = instalmentPlan(loanTotal, count, feeRate);
+  const fees = plan.reduce((sum, p) => sum + p.fee, 0);
+  const first = plan[0] ?? { base: 0, fee: 0 };
   const fee = principal > 0 ? processingFee(s, principal) : 0;
-  const txn = principal > 0 ? transactionFee(s) : 0;
-  const count = instalmentCount(frequency, months);
   return {
     rate,
-    interest,
-    total,
-    monthly: months > 0 ? total / months : 0,
+    interest: Math.max(interest, 0),
+    loanTotal,
+    fees,
+    total: loanTotal + fees,
     frequency,
     count,
-    each: count > 0 ? total / count : 0,
+    each: first.base + first.fee,
+    base: first.base,
+    instalmentFee: first.fee,
+    feeRate,
     fee,
-    transactionFee: txn,
-    net: principal - fee - txn,
+    net: principal - fee,
   };
 }
 
@@ -180,16 +238,20 @@ export type InstalmentState = 'PAID' | 'PARTIAL' | 'UPCOMING' | 'OVERDUE';
 export interface Instalment {
   number: number;
   dueDate: Date;
+  /** Fee included. */
   amount: number;
+  base: number;
+  fee: number;
   paid: number;
   outstanding: number;
   status: InstalmentState;
 }
 
 /**
- * Equal instalments, the nth due n months (or, weekly, n weeks) after disbursement. What has been
- * repaid is poured in oldest-first: covered → paid, partly → part paid, past
- * its date and not covered → overdue.
+ * The instalments, each with its transaction fee, the nth due n months (or, weekly, n
+ * weeks) after disbursement. What has been repaid is poured in oldest-first:
+ * covered → paid, partly → part paid, past its date and not covered → overdue.
+ * Mirrors the schedule the server derives.
  */
 export function buildSchedule(
   principal: number,
@@ -199,23 +261,20 @@ export function buildSchedule(
   amountRepaid = 0,
   now = new Date(),
   frequency: RepaymentFrequency = 'MONTHLY',
+  terms: { count?: number; feeRate?: number; wholeNaira?: boolean } = {},
 ): Instalment[] {
-  const total = principal * (1 + flatRate);
-  const count = instalmentCount(frequency, tenureMonths);
-  const each = count > 0 ? total / count : 0;
+  const wholeNaira = terms.wholeNaira ?? true;
+  const loanTotal = wholeNaira ? ceilNaira(principal * (1 + flatRate)) : principal * (1 + flatRate);
+  const count = terms.count ?? instalmentCount(frequency, tenureMonths, disbursedAt);
+  const plan = instalmentPlan(loanTotal, count, terms.feeRate ?? 0, wholeNaira);
   let covered = amountRepaid;
-  return Array.from({ length: count }, (_, i) => {
+  return plan.map((part, i) => {
+    const amount = part.base + part.fee;
     const dueDate = instalmentDue(frequency, disbursedAt, i + 1);
-    const paid = covered >= each ? each : Math.max(covered, 0);
+    const paid = covered >= amount ? amount : Math.max(covered, 0);
     covered -= paid;
-    const settled = paid >= each - 0.01;
-    const status: InstalmentState = settled
-      ? 'PAID'
-      : now > dueDate
-        ? 'OVERDUE'
-        : paid > 0
-          ? 'PARTIAL'
-          : 'UPCOMING';
-    return { number: i + 1, dueDate, amount: each, paid, outstanding: Math.max(each - paid, 0), status };
+    const settled = paid >= amount - 0.01;
+    const status: InstalmentState = settled ? 'PAID' : now > dueDate ? 'OVERDUE' : paid > 0 ? 'PARTIAL' : 'UPCOMING';
+    return { number: i + 1, dueDate, amount, base: part.base, fee: part.fee, paid, outstanding: Math.max(amount - paid, 0), status };
   });
 }

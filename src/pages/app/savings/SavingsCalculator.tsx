@@ -3,7 +3,7 @@ import { PageHeader } from '../../../components/PageHeader';
 import { Segmented } from '../../../components/ui/Bits';
 import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
-import { AmountInput, FieldLabel, RangeSlider } from '../../../components/ui/Inputs';
+import { AmountInput, FieldLabel, NumberField } from '../../../components/ui/Inputs';
 import { effectiveYieldPct, savingsInterest, targetPerDeposit, targetRateFor } from '../../../lib/finance';
 import { humanPeriod, months as monthsLabel, naira, parseAmount, ratePct, rateOf } from '../../../lib/format';
 import { frequencyAdverb } from '../../../lib/labels';
@@ -45,7 +45,7 @@ export default function SavingsCalculator() {
                 <FieldLabel>Lock period</FieldLabel>
                 <span className="text-sm font-extrabold text-gold">{humanPeriod(days)}</span>
               </div>
-              <RangeSlider label="Days" value={days} min={s.savings.minLockDays} max={s.savings.maxLockDays} onChange={setDays} />
+              <NumberField label="Days" value={days} min={s.savings.minLockDays} max={s.savings.maxLockDays} onChange={setDays} />
             </div>
           ) : (
             <>
@@ -54,7 +54,7 @@ export default function SavingsCalculator() {
                   <FieldLabel>Term</FieldLabel>
                   <span className="text-sm font-extrabold text-gold">{monthsLabel(term)}</span>
                 </div>
-                <RangeSlider label="Months" value={term} min={s.savings.minTargetMonths} max={60} onChange={setTerm} />
+                <NumberField label="Months" value={term} min={s.savings.minTargetMonths} max={60} onChange={setTerm} />
               </div>
               <Segmented<AutoFrequency>
                 size="sm"

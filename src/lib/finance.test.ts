@@ -5,6 +5,7 @@ import {
   buildSchedule,
   effectiveYieldPct,
   instalmentCount,
+  instalmentPlan,
   loanPreview,
   loanRateFor,
   loanRateRange,
@@ -48,7 +49,12 @@ const S: PublicSettings = {
     flatProcessingFee: 5000,
     processingFeeThreshold: 500_000,
     processingFeeRate: 0.01,
-    transactionFee: 2000,
+    repaymentFeeRate: 0.02,
+    weeklyAllowed: true,
+    monthlyAllowed: true,
+  },
+  get groupLending() {
+    return this.lending;
   },
   wallet: { minDepositAmount: 100, minWithdrawalAmount: 500 },
   thrift: { minContribution: 1000, minMembers: 2, maxMembers: 12 },
@@ -108,16 +114,16 @@ describe('Target Savings', () => {
 
 describe('Lending', () => {
   it.each([
-    [1, 225_000, 225_000],
-    [2, 234_000, 117_000],
-    [3, 250_000, 83_333.33],
-    [6, 290_000, 48_333.33],
-    [12, 356_000, 29_666.67],
-    [24, 468_000, 19_500],
-  ])('₦200,000 over %i months repays ₦%f', (m, total, monthly) => {
-    const p = loanPreview(S, 200_000, m);
-    expect(round2(p.total)).toBe(total);
-    expect(round2(p.monthly)).toBe(monthly);
+    [1, 225_000, 229_500],
+    [2, 234_000, 119_340],
+    [3, 250_000, 85_001],
+    [6, 290_000, 49_301],
+    [12, 356_000, 30_261],
+    [24, 468_000, 19_890],
+  ])('₦200,000 over %i months: ₦%i of loan and interest, ₦%i a month with the 2% fee', (m, loanTotal, monthly) => {
+    const p = loanPreview(S, 200_000, m, 'MONTHLY');
+    expect(p.loanTotal).toBe(loanTotal);
+    expect(p.each).toBe(monthly);
   });
 
   it('charges a flat ₦5,000 up to and including ₦500,000, then 1% of the whole amount', () => {
@@ -127,21 +133,23 @@ describe('Lending', () => {
     expect(processingFee(S, 2_000_000)).toBe(20_000);
   });
 
-  it('takes both fees out of the disbursement, not on top of the debt', () => {
-    const p = loanPreview(S, 200_000, 3);
+  it('takes only the management fee out of the payout; the 2% is on each repayment', () => {
+    const p = loanPreview(S, 200_000, 3, 'MONTHLY');
     expect(p.fee).toBe(5000);
-    expect(p.transactionFee).toBe(2000);
-    expect(p.net).toBe(193_000);
-    expect(p.total).toBe(250_000);
+    expect(p.net).toBe(195_000);
+    expect(p.loanTotal).toBe(250_000);
+    expect(p.base).toBe(83_334);
+    expect(p.instalmentFee).toBe(1667);
+    expect(p.fees).toBe(5001);
+    expect(p.total).toBe(255_001);
   });
 
   it.each([
-    [100_000, 5000, 93_000],
-    [600_000, 6000, 592_000],
-  ])('₦%i borrowed: ₦%i management fee, ₦2,000 transaction fee, ₦%i received', (principal, fee, net) => {
+    [100_000, 5000, 95_000],
+    [600_000, 6000, 594_000],
+  ])('₦%i borrowed: ₦%i management fee, ₦%i received', (principal, fee, net) => {
     const p = loanPreview(S, principal, 3);
     expect(p.fee).toBe(fee);
-    expect(p.transactionFee).toBe(2000);
     expect(p.net).toBe(net);
   });
 
@@ -168,7 +176,7 @@ describe('Lending', () => {
     expect(rows.map((r) => r.dueDate.getDate())).toEqual([28, 31, 30]);
     expect(rows[0]!.status).toBe('PAID');
     expect(rows[1]!.status).toBe('PARTIAL');
-    expect(round2(rows[1]!.paid)).toBe(16_666.67);
+    expect(rows[1]!.paid).toBe(16_666);
     expect(rows[2]!.status).toBe('UPCOMING');
   });
 
@@ -228,26 +236,35 @@ describe('Validation', () => {
   });
 });
 
-describe('weekly repayment', () => {
-  it('splits a tenure into as many weeks as the months hold', () => {
-    expect(instalmentCount('WEEKLY', 1)).toBe(4);
-    expect(instalmentCount('WEEKLY', 3)).toBe(13);
-    expect(instalmentCount('WEEKLY', 6)).toBe(26);
-    expect(instalmentCount('WEEKLY', 12)).toBe(52);
+describe('weekly or monthly, with 2% on each repayment', () => {
+  it('counts weeks by the calendar from the day of payout', () => {
+    expect(instalmentCount('WEEKLY', 3, new Date(2026, 9, 23, 10))).toBe(13);
+    expect(instalmentCount('WEEKLY', 3, new Date(2026, 10, 30, 10))).toBe(12);
+    expect(instalmentCount('WEEKLY', 1, new Date(2026, 9, 23, 10))).toBe(4);
+    expect(instalmentCount('WEEKLY', 12, new Date(2026, 9, 23, 10))).toBe(52);
     expect(instalmentCount('MONTHLY', 6)).toBe(6);
   });
 
-  it('costs the same as monthly, split into weekly instalments seven days apart', () => {
-    const weekly = loanPreview(S, 200_000, 3, 'WEEKLY');
-    const monthly = loanPreview(S, 200_000, 3);
-    expect(weekly.total).toBe(monthly.total);
-    expect(weekly.count).toBe(13);
-    expect(round2(weekly.each)).toBe(round2(weekly.total / 13));
+  it('₦125,000 over 12 weeks is ₦10,417 + ₦209 = ₦10,626 a week', () => {
+    const plan = instalmentPlan(125_000, 12, 0.02);
+    expect(plan[0]).toEqual({ base: 10_417, fee: 209 });
+    expect(plan[11]).toEqual({ base: 10_413, fee: 209 });
+    expect(plan.reduce((s, p) => s + p.base, 0)).toBe(125_000);
+  });
 
-    const start = new Date(2026, 0, 31, 12);
-    const rows = buildSchedule(200_000, 0.25, 3, start, 0, start, 'WEEKLY');
+  it('₦125,000 over 3 months is ₦41,667 + ₦834 = ₦42,501 a month', () => {
+    const plan = instalmentPlan(125_000, 3, 0.02);
+    expect(plan[0]).toEqual({ base: 41_667, fee: 834 });
+    expect(plan[0]!.base + plan[0]!.fee).toBe(42_501);
+  });
+
+  it('schedules weekly instalments seven days apart, adding up to everything owed', () => {
+    const start = new Date(2026, 9, 23, 12);
+    const rows = buildSchedule(100_000, 0.25, 3, start, 0, start, 'WEEKLY', { feeRate: 0.02 });
     expect(rows).toHaveLength(13);
     expect((rows[1]!.dueDate.getTime() - rows[0]!.dueDate.getTime()) / 86_400_000).toBe(7);
-    expect(round2(rows.reduce((sum, r) => sum + r.amount, 0))).toBe(250_000);
+    const p = loanPreview(S, 100_000, 3, 'WEEKLY', start);
+    expect(rows.reduce((s, r) => s + r.amount, 0)).toBe(p.total);
+    expect(p.total).toBe(125_000 + p.fees);
   });
 });

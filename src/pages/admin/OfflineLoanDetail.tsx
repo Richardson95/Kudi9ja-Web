@@ -52,7 +52,12 @@ export default function OfflineLoanDetail() {
   // On an account the customer has taken over, their details are theirs; until then the team can still correct them.
   const activated = l.claimed && !!owner.data && owner.data.accountStatus !== 'PENDING_ACTIVATION';
   const reload = () => qc.invalidateQueries({ queryKey: keys.admin.importFile(id) });
-  const schedule = l.disbursedAt ? buildSchedule(l.principal, l.flatRate, l.tenureMonths, new Date(l.disbursedAt), l.amountRepaid, undefined, l.repaymentFrequency) : [];
+  const schedule = l.disbursedAt ? buildSchedule(l.principal, l.flatRate, l.tenureMonths, new Date(l.disbursedAt), l.amountRepaid, undefined, l.repaymentFrequency, {
+        count: l.installmentCount,
+        feeRate: l.repaymentFeeRate,
+        wholeNaira: l.wholeNaira,
+      })
+    : [];
 
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -217,7 +222,8 @@ export default function OfflineLoanDetail() {
               ['Lent', naira(l.principal)],
               ['Flat rate', `${Math.round(l.flatRate * 10000) / 100}%`],
               ['Management fee', naira(l.processingFee)],
-              ['Transaction fee', naira(l.transactionFee ?? 0)],
+              l.transactionFee ? ['Transaction fee (taken at payout)', naira(l.transactionFee)] : null,
+              l.repaymentFees ? [`Transaction fees (${Math.round(l.repaymentFeeRate * 10000) / 100}% of each repayment)`, naira(l.repaymentFees)] : null,
               { label: 'Paid out to the borrower', value: naira(l.netDisbursed ?? l.principal - l.processingFee), tone: 'gold' },
               ['Paid out on', asDay(l.disbursedAt)],
               ['Entered by', `${l.importedBy ?? '—'}${l.importedAt ? ` · ${asDay(l.importedAt)}` : ''}`],

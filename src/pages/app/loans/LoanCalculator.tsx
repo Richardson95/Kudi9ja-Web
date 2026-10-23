@@ -3,25 +3,29 @@ import { PageHeader } from '../../../components/PageHeader';
 import { Pill, Segmented } from '../../../components/ui/Bits';
 import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
-import { AmountInput, FieldLabel, RangeSlider } from '../../../components/ui/Inputs';
-import { eachInstalment, feeBasis, instalmentDue, instalmentsPhrase, loanPreview } from '../../../lib/finance';
+import { AmountInput, FieldLabel, NumberField } from '../../../components/ui/Inputs';
+import { eachInstalment, feeBasis, feeRateLabel, instalmentDue, instalmentsPhrase, loanPreview } from '../../../lib/finance';
 import { asDay, months as monthsLabel, naira, parseAmount, rateOf } from '../../../lib/format';
-import { useSettings } from '../../../state/settings';
+import { useBorrowerSettings } from '../../../hooks/queries';
 import type { RepaymentFrequency } from '../../../types/api';
 
 /** What a loan would cost, before applying. Uses the rate card in force today. */
 export default function LoanCalculator() {
-  const s = useSettings();
+  const { settings: s, groupPricing } = useBorrowerSettings();
+  const offered = (['WEEKLY', 'MONTHLY'] as RepaymentFrequency[]).filter((f) =>
+    f === 'WEEKLY' ? s.lending.weeklyAllowed !== false : s.lending.monthlyAllowed !== false,
+  );
   const [amount, setAmount] = useState('200,000');
   const [term, setTerm] = useState(Math.min(6, s.lending.maxTenureMonths));
-  const [frequency, setFrequency] = useState<RepaymentFrequency>('MONTHLY');
+  const [picked, setFrequency] = useState<RepaymentFrequency>('WEEKLY');
+  const frequency: RepaymentFrequency = offered.includes(picked) ? picked : (offered[0] ?? 'WEEKLY');
   const principal = parseAmount(amount);
   const p = loanPreview(s, principal, term, frequency);
   const outOfRange = principal > 0 && (principal < s.lending.minAmount || principal > s.lending.maxAmount);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <PageHeader back="/app/loans" backLabel="Loans" title="Loan calculator" subtitle="Flat interest: you know the full cost on day one." />
+      <PageHeader back="/app/loans" backLabel="Loans" title="Loan calculator" subtitle={groupPricing ? 'Priced on your loan group terms. Flat interest: you know the full cost on day one.' : 'Flat interest: you know the full cost on day one.'} />
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="space-y-6 p-6">
           <AmountInput value={amount} onChange={setAmount} label="How much?" error={outOfRange} />
@@ -35,17 +39,14 @@ export default function LoanCalculator() {
               <FieldLabel>Over</FieldLabel>
               <span className="text-sm font-extrabold text-gold">{monthsLabel(term)}</span>
             </div>
-            <RangeSlider label="Months" value={term} min={1} max={s.lending.maxTenureMonths} onChange={setTerm} />
+            <NumberField label="Months" value={term} min={1} max={s.lending.maxTenureMonths} onChange={setTerm} />
           </div>
           <div>
             <FieldLabel>Repay</FieldLabel>
             <Segmented<RepaymentFrequency>
               value={frequency}
               onChange={setFrequency}
-              options={[
-                { value: 'MONTHLY', label: 'Monthly' },
-                { value: 'WEEKLY', label: 'Weekly' },
-              ]}
+              options={offered.map((f) => ({ value: f, label: f === 'WEEKLY' ? 'Weekly' : 'Monthly' }))}
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -60,15 +61,18 @@ export default function LoanCalculator() {
           <div>
             <p className="text-[13px] text-ink-3">{eachInstalment(frequency)}</p>
             <p className="num text-4xl font-extrabold">{naira(p.each)}</p>
-            <p className="mt-1 text-[12.5px] text-ink-3">{instalmentsPhrase(frequency, term)}. The total is the same weekly or monthly.</p>
+            <p className="mt-1 text-[12.5px] text-ink-3">
+              {naira(p.base)} + {naira(p.instalmentFee)} transaction fee ({feeRateLabel(p.feeRate)} of each repayment) · {instalmentsPhrase(frequency, term)}
+            </p>
           </div>
           <DetailRows
             rows={[
               ['Flat rate', rateOf(p.rate)],
               ['Interest', naira(p.interest)],
               ['Management fee', `${naira(p.fee)} (${feeBasis(s, principal)})`],
-              ['Transaction fee', naira(p.transactionFee)],
               { label: 'You receive', value: naira(p.net), tone: 'success' },
+              ['Loan and interest', naira(p.loanTotal)],
+              [`Transaction fees (${feeRateLabel(p.feeRate)} of each repayment)`, naira(p.fees)],
               ['First payment', asDay(instalmentDue(frequency, new Date(), 1))],
               { label: 'Total to repay', value: naira(p.total), bold: true },
             ]}

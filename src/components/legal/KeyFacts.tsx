@@ -1,6 +1,6 @@
 import { Ban, CalendarClock, HandCoins, Hourglass, Landmark, PhoneOff, Receipt, Scale, ShieldAlert, UserCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { loanPreview, loanRateFor, processingFee } from '../../lib/finance';
+import { feeRateLabel, loanPreview, loanRateFor, processingFee } from '../../lib/finance';
 import { months, naira, nairaFlat, ratePct } from '../../lib/format';
 import { useSettings } from '../../state/settings';
 
@@ -17,7 +17,7 @@ export function LendingKeyFacts() {
   const s = useSettings();
   const l = s.lending;
   const tenures = [1, 3, 6, 12, l.maxTenureMonths].filter((m, i, a) => m <= l.maxTenureMonths && a.indexOf(m) === i);
-  const example = loanPreview(s, 200_000, 3);
+  const example = loanPreview(s, 200_000, 3, 'MONTHLY');
 
   return (
     <div className="space-y-5">
@@ -30,18 +30,18 @@ export function LendingKeyFacts() {
         </Fact>
         <Fact icon={<Receipt />} title="Management and transaction fees">
           Management fee: {nairaFlat(l.flatProcessingFee)} on any loan up to and including {nairaFlat(l.processingFeeThreshold)}; above that,{' '}
-          {ratePct(l.processingFeeRate * 100)} of the whole amount. Transaction fee: {nairaFlat(l.transactionFee)} on every loan. Both come out
-          of what you receive — never added to what you owe.
+          {ratePct(l.processingFeeRate * 100)} of the whole amount, taken from what you receive. Transaction fee:{' '}
+          {feeRateLabel(l.repaymentFeeRate)} of each repayment, added to every instalment, weekly or monthly.
         </Fact>
         <Fact icon={<Ban />} title="No late fees, no penalty interest">
           Even in default, the amount you owe does not increase.
         </Fact>
         <Fact icon={<CalendarClock />} title="Pay off early any time">
-          Clear a loan ahead of schedule whenever you like. You pay what is still owed, interest included — no discount, and no charge.
+          Clear a loan ahead of schedule whenever you like. You pay what is still owed, interest and transaction fees included — no discount,
+          and no charge.
         </Fact>
         <Fact icon={<Hourglass />} title="Once it is paid out, it is yours to repay">
-          A loan cannot be cancelled after it reaches your wallet. You repay it in full, with the interest shown before you confirm —
-          or pay it off early and save part of the interest.
+          A loan cannot be cancelled after it reaches your wallet. You repay it in full, with the interest and fees shown before you confirm.
         </Fact>
         <Fact icon={<UserCheck />} title="A person decides">
           Every application is read by our team — your statement, your business and your guarantor. Nothing is refused by a score.
@@ -60,7 +60,7 @@ export function LendingKeyFacts() {
           <div className="grid grid-cols-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-3">
             <span>Repaid over</span>
             <span className="text-right">Total rate</span>
-            <span className="text-right">₦100,000 repays</span>
+            <span className="text-right">₦100,000: loan + interest</span>
           </div>
           {tenures.map((m) => {
             const r = loanRateFor(s, m);
@@ -83,10 +83,6 @@ export function LendingKeyFacts() {
             <span className="num font-bold text-ink">-{naira(processingFee(s, 200_000))}</span>
           </li>
           <li className="flex justify-between gap-4">
-            <span>Transaction fee</span>
-            <span className="num font-bold text-ink">-{naira(example.transactionFee)}</span>
-          </li>
-          <li className="flex justify-between gap-4">
             <span>Lands in your wallet</span>
             <span className="num font-bold text-success">{naira(example.net)}</span>
           </li>
@@ -94,10 +90,14 @@ export function LendingKeyFacts() {
             <span>Interest ({ratePct(example.rate * 100)} flat)</span>
             <span className="num font-bold text-ink">{naira(example.interest)}</span>
           </li>
+          <li className="flex justify-between gap-4">
+            <span>Transaction fee ({feeRateLabel(example.feeRate)} of each repayment)</span>
+            <span className="num font-bold text-ink">{naira(example.fees)}</span>
+          </li>
           <li className="flex justify-between gap-4 border-t border-stroke pt-1.5">
-            <span>You repay</span>
+            <span>You repay, monthly</span>
             <span className="num font-extrabold text-ink">
-              {naira(example.total)} · 3 × {naira(example.monthly)}
+              {naira(example.total)} · 3 × {naira(example.each)}
             </span>
           </li>
         </ul>

@@ -118,12 +118,14 @@ export default function LoanDetail() {
               ['Borrowed', naira(l.principal)],
               ['Flat rate', l.flatRateLabel],
               ['Management fee', naira(l.processingFee)],
-              l.transactionFee ? ['Transaction fee', naira(l.transactionFee)] : null,
+              l.transactionFee ? ['Transaction fee (taken at payout)', naira(l.transactionFee)] : null,
               ['Paid to your wallet', naira(l.netDisbursed)],
               ['Disbursed', asDay(l.disbursedAt)],
               ['Repaid', `${l.repaymentFrequencyLabel} · ${l.installmentCount} payments`],
               [l.repaymentFrequency === 'WEEKLY' ? 'Weekly repayment' : 'Monthly repayment', naira(l.installmentAmount)],
+              l.totalRepaymentFees ? ['Of which transaction fee', `${naira(l.installmentFee)} (${l.repaymentFeeRateLabel} of each repayment)`] : null,
               ['Total interest', naira(l.totalInterest)],
+              l.totalRepaymentFees ? ['Transaction fees in all', naira(l.totalRepaymentFees)] : null,
               { label: 'Total to repay', value: naira(l.totalRepayable), bold: true },
               { label: 'Repaid so far', value: naira(l.amountRepaid), tone: 'success' },
               l.rebateGranted ? { label: 'Rebate', value: naira(l.rebateGranted), tone: 'success' } : null,
@@ -149,6 +151,7 @@ export default function LoanDetail() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">{asDay(r.dueDate)}</p>
+                  {r.fee > 0 && <p className="text-[12px] text-ink-3">{naira(r.base)} + {naira(r.fee)} transaction fee</p>}
                   {r.amountPaid > 0 && r.status !== 'PAID' && <p className="text-[12px] text-ink-3">{naira(r.amountPaid)} paid</p>}
                 </div>
                 <p className="num text-sm font-bold">{naira(r.amount)}</p>

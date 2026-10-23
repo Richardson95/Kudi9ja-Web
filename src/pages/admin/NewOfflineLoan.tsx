@@ -16,9 +16,9 @@ import {
   buildSchedule,
   eachInstalment,
   instalmentCount,
-  instalmentsPhrase,
   processingFee as managementFeeFor,
-  transactionFee as transactionFeeFor,
+  feeRateLabel,
+  repaymentFeeRate as repaymentFeeRateFor,
 } from '../../lib/finance';
 import { useSettings } from '../../state/settings';
 import { asDay, fileSize, formatAmountInput, isoDate, naira, parseAmount } from '../../lib/format';
@@ -55,47 +55,56 @@ export default function NewOfflineLoan() {
   const [f, setF] = useState({
     bvn: '', fullName: '', email: '', phone: '', nin: '', dateOfBirth: '', gender: '', address: '', state: '', occupation: '',
     businessName: '', businessAddress: '', monthlyIncome: '',
-    principal: '', tenureMonths: '6', ratePct: '25', processingFee: '', transactionFee: '', purpose: '', disbursedAt: isoDate(new Date()), amountRepaid: '',
+    principal: '', tenureMonths: '6', ratePct: '25', processingFee: '', feePct: '', purpose: '', disbursedAt: isoDate(new Date()), amountRepaid: '',
     payoutBank: '', payoutAccountNumber: '', notes: '',
   });
-  const [frequency, setFrequency] = useState<RepaymentFrequency>('MONTHLY');
+  const [chosen, setChosen] = useState<RepaymentFrequency | null>(null);
+  const frequency: RepaymentFrequency = chosen ?? 'WEEKLY';
   const [guarantors, setGuarantors] = useState<OfflineGuarantor[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [docs, setDocs] = useState<PendingDoc[]>([]);
   const [docLabel, setDocLabel] = useState(DOC_LABELS[0]!);
   const set = (k: keyof typeof f) => (v: string) => setF((o) => ({ ...o, [k]: v }));
-  const settings = useSettings();
+  const base = useSettings();
+  // Entered into a group: the group's terms start the fee boxes.
+  const settings = g ? { ...base, lending: base.groupLending } : base;
+  const offered = (['WEEKLY', 'MONTHLY'] as RepaymentFrequency[]).filter((f) =>
+    f === 'WEEKLY' ? settings.lending.weeklyAllowed !== false : settings.lending.monthlyAllowed !== false,
+  );
   // The fees start at today's rules — management fee by amount, the flat
   // transaction fee — and the admin corrects them to what was actually taken.
-  const [feesTouched, setFeesTouched] = useState({ management: false, transaction: false });
+  const [feesTouched, setFeesTouched] = useState({ management: false });
   const setPrincipal = (v: string) => {
     const amount = parseAmount(v);
     setF((o) => ({
       ...o,
       principal: v,
       processingFee: feesTouched.management ? o.processingFee : amount > 0 ? formatAmountInput(String(Math.round(managementFeeFor(settings, amount)))) : '',
-      transactionFee: feesTouched.transaction ? o.transactionFee : amount > 0 ? formatAmountInput(String(transactionFeeFor(settings))) : '',
     }));
   };
 
   const principal = parseAmount(f.principal);
   const months = Number(f.tenureMonths) || 0;
   const rate = (Number(f.ratePct) || 0) / 100;
-  const total = principal * (1 + rate);
+  const feeRate = f.feePct === '' ? repaymentFeeRateFor(settings) : (Number(f.feePct) || 0) / 100;
   const repaid = parseAmount(f.amountRepaid);
-  const schedule = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, new Date(`${f.disbursedAt}T12:00:00`), repaid, undefined, frequency) : [];
-  const count = instalmentCount(frequency, months);
+  const schedule = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, new Date(`${f.disbursedAt}T12:00:00`), repaid, undefined, frequency, { feeRate }) : [];
+  const count = schedule.length || instalmentCount(frequency, months, new Date(`${f.disbursedAt}T12:00:00`));
+  const loanTotal = schedule.reduce((sum, r) => sum + r.base, 0);
+  const fees = schedule.reduce((sum, r) => sum + r.fee, 0);
+  const owed = loanTotal + fees;
 
   const errors = {
     bvn: f.bvn && !/^\d{11}$/.test(f.bvn) ? 'Eleven digits' : null,
     nin: f.nin && !/^\d{11}$/.test(f.nin) ? 'Eleven digits' : null,
     account: f.payoutAccountNumber && !/^\d{10}$/.test(f.payoutAccountNumber) ? 'Ten digits' : null,
-    repaid: repaid > total ? `More than the ${naira(total)} owed` : null,
-    fee: parseAmount(f.processingFee) + parseAmount(f.transactionFee) >= principal && principal > 0 ? 'The fees cannot be as much as the loan' : null,
+    repaid: repaid > owed && owed > 0 ? `More than the ${naira(owed)} owed` : null,
+    fee: parseAmount(f.processingFee) >= principal && principal > 0 ? 'The fee cannot be as much as the loan' : null,
+    feePct: feeRate < 0 || feeRate > 0.2 ? 'Between 0% and 20%' : null,
   };
   const valid =
     /^\d{11}$/.test(f.bvn) && f.fullName.trim().split(/\s+/).length >= 2 && principal > 0 && months >= 1 && months <= 60 &&
-    rate > 0 && rate <= 3 && !!f.purpose && !!f.disbursedAt && Object.values(errors).every((e) => !e) &&
+    rate > 0 && rate <= 3 && !!chosen && !!f.purpose && !!f.disbursedAt && Object.values(errors).every((e) => !e) &&
     guarantors.every((g) => g.fullName.trim());
 
   const addDocs = (files: FileList | null) => {
@@ -119,9 +128,9 @@ export default function NewOfflineLoan() {
         principal,
         tenureMonths: months,
         repaymentFrequency: frequency,
+        repaymentFeeRate: feeRate,
         flatRate: rate,
         processingFee: parseAmount(f.processingFee) || undefined,
-        transactionFee: parseAmount(f.transactionFee) || undefined,
         purpose: f.purpose,
         disbursedAt: new Date(`${f.disbursedAt}T12:00:00`).toISOString(),
         amountRepaid: repaid || undefined,
@@ -206,15 +215,14 @@ export default function NewOfflineLoan() {
               <Input label="Months to repay *" type="number" min={1} max={60} value={f.tenureMonths} onChange={(e) => set('tenureMonths')(e.target.value)} />
               <div>
                 <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">Repaid *</span>
-                <Segmented<RepaymentFrequency>
-                  value={frequency}
-                  onChange={setFrequency}
-                  options={[
-                    { value: 'MONTHLY', label: 'Monthly' },
-                    { value: 'WEEKLY', label: 'Weekly' },
-                  ]}
+                <Segmented<RepaymentFrequency | ''>
+                  value={chosen ?? ''}
+                  onChange={(v) => v && setChosen(v)}
+                  options={offered.map((f) => ({ value: f, label: f === 'WEEKLY' ? 'Weekly' : 'Monthly' }))}
                 />
-                {months > 0 && <p className="mt-1.5 text-[12px] text-ink-3">{instalmentsPhrase(frequency, months)}</p>}
+                <p className="mt-1.5 text-[12px] text-ink-3">
+                  {chosen ? (months > 0 ? `${count} ${chosen === 'WEEKLY' ? 'weekly' : 'monthly'} payments` : '') : 'Choose weekly or monthly. Shown weekly until you do.'}
+                </p>
               </div>
               <Input label="Flat interest, % of the loan *" type="number" min={0} step="0.5" value={f.ratePct} onChange={(e) => set('ratePct')(e.target.value)} hint="Charged once over the whole term" />
               <Input
@@ -229,14 +237,15 @@ export default function NewOfflineLoan() {
                 hint="What was actually taken. Starts at today's rule."
               />
               <Input
-                label="Transaction fee charged (₦)"
-                inputMode="numeric"
-                value={f.transactionFee}
-                onChange={(e) => {
-                  setFeesTouched((t) => ({ ...t, transaction: true }));
-                  set('transactionFee')(formatAmountInput(e.target.value));
-                }}
-                hint="Clear it if none was taken."
+                label="Transaction fee on each repayment (%)"
+                type="number"
+                min={0}
+                max={20}
+                step="0.5"
+                value={f.feePct === '' ? String(Math.round(repaymentFeeRateFor(settings) * 10000) / 100) : f.feePct}
+                onChange={(e) => set('feePct')(e.target.value)}
+                error={errors.feePct}
+                hint="Added to every instalment, rounded up to the naira. Starts at today's rate."
               />
               <Input label="Date paid out *" type="date" max={isoDate(new Date())} value={f.disbursedAt} onChange={(e) => set('disbursedAt')(e.target.value)} />
               <Input label="Already repaid (₦)" inputMode="numeric" value={f.amountRepaid} onChange={(e) => set('amountRepaid')(formatAmountInput(e.target.value))} error={errors.repaid} />
@@ -331,13 +340,14 @@ export default function NewOfflineLoan() {
               rows={[
                 ['Lent', naira(principal)],
                 ['Management fee', `- ${naira(parseAmount(f.processingFee))}`],
-                ['Transaction fee', `- ${naira(parseAmount(f.transactionFee))}`],
-                { label: 'Paid out to the borrower', value: naira(Math.max(principal - parseAmount(f.processingFee) - parseAmount(f.transactionFee), 0)), tone: 'gold' },
-                ['Interest', naira(principal * rate)],
-                ['Total to repay', naira(total)],
-                [eachInstalment(frequency), naira(count ? total / count : 0)],
+                { label: 'Paid out to the borrower', value: naira(Math.max(principal - parseAmount(f.processingFee), 0)), tone: 'gold' },
+                ['Interest', naira(Math.max(loanTotal - principal, 0))],
+                ['Loan and interest', naira(loanTotal)],
+                [`Transaction fees (${feeRateLabel(feeRate)} of each repayment)`, naira(fees)],
+                ['Total to repay', naira(owed)],
+                [eachInstalment(frequency), schedule[0] ? `${naira(schedule[0].amount)} (${naira(schedule[0].base)} + ${naira(schedule[0].fee)} fee)` : naira(0)],
                 { label: 'Already repaid', value: naira(repaid), tone: 'success' },
-                { label: 'Outstanding', value: naira(Math.max(total - repaid, 0)), bold: true },
+                { label: 'Outstanding', value: naira(Math.max(owed - repaid, 0)), bold: true },
                 schedule.length ? ['Last payment due', asDay(schedule[schedule.length - 1]!.dueDate)] : null,
               ]}
             />

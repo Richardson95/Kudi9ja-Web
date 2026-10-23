@@ -7,7 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
 import { useDialogs } from '../../../components/ui/Dialogs';
 import { Input } from '../../../components/ui/Field';
-import { AmountInput, FieldLabel, QuickAmounts, RangeSlider } from '../../../components/ui/Inputs';
+import { AmountInput, FieldLabel, QuickAmounts, NumberField } from '../../../components/ui/Inputs';
 import { useAction } from '../../../hooks/useAction';
 import { useRefresh, useWallet } from '../../../hooks/queries';
 import { savingsApi } from '../../../lib/api/endpoints';
@@ -89,7 +89,7 @@ export default function FixedPlan() {
               <FieldLabel>For how long?</FieldLabel>
               <span className="text-sm font-extrabold text-gold">{humanPeriod(days)}</span>
             </div>
-            <RangeSlider label="Lock period in days" value={days} min={s.savings.minLockDays} max={s.savings.maxLockDays} onChange={setDays} />
+            <NumberField label="Lock period in days" value={days} min={s.savings.minLockDays} max={s.savings.maxLockDays} onChange={setDays} />
             <div className="mt-3 flex flex-wrap gap-2">
               {PRESETS.filter((d) => d >= s.savings.minLockDays && d <= s.savings.maxLockDays).map((d) => (
                 <Button key={d} size="sm" variant={d === days ? 'outline' : 'ghost'} onClick={() => setDays(d)}>

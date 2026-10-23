@@ -22,7 +22,58 @@ type NumKey = { [K in keyof PlatformSettings]-?: PlatformSettings[K] extends num
 type BoolKey = { [K in keyof PlatformSettings]-?: PlatformSettings[K] extends boolean ? K : never }[keyof PlatformSettings];
 
 /** Rates are stored as fractions; they are edited as percentages. */
-const PERCENT: NumKey[] = ['savingsAnnualRate', 'targetRateShort', 'targetRateMedium', 'targetRateLong', 'loanProcessingFeeRate'];
+const PERCENT: NumKey[] = [
+  'savingsAnnualRate',
+  'targetRateShort',
+  'targetRateMedium',
+  'targetRateLong',
+  'loanProcessingFeeRate',
+  'loanRepaymentFeeRate',
+  'groupLoanProcessingFeeRate',
+  'groupLoanRepaymentFeeRate',
+];
+
+/** The standard loan settings and the loan-group copy, field by field. */
+const LENDING = {
+  standard: {
+    rates: 'loanRates',
+    min: 'minLoanAmount',
+    max: 'maxLoanAmount',
+    tenure: 'maxLoanTenureMonths',
+    flat: 'flatProcessingFee',
+    threshold: 'processingFeeThreshold',
+    feeRate: 'loanProcessingFeeRate',
+    repayFee: 'loanRepaymentFeeRate',
+    weekly: 'loanWeeklyAllowed',
+    monthly: 'loanMonthlyAllowed',
+  },
+  group: {
+    rates: 'groupLoanRates',
+    min: 'groupMinLoanAmount',
+    max: 'groupMaxLoanAmount',
+    tenure: 'groupMaxLoanTenureMonths',
+    flat: 'groupFlatProcessingFee',
+    threshold: 'groupProcessingFeeThreshold',
+    feeRate: 'groupLoanProcessingFeeRate',
+    repayFee: 'groupLoanRepaymentFeeRate',
+    weekly: 'groupLoanWeeklyAllowed',
+    monthly: 'groupLoanMonthlyAllowed',
+  },
+} as const satisfies Record<
+  string,
+  {
+    rates: 'loanRates' | 'groupLoanRates';
+    min: NumKey;
+    max: NumKey;
+    tenure: NumKey;
+    flat: NumKey;
+    threshold: NumKey;
+    feeRate: NumKey;
+    repayFee: NumKey;
+    weekly: BoolKey;
+    monthly: BoolKey;
+  }
+>;
 
 export default function Controls() {
   const settings = useAdminSettings();
@@ -88,7 +139,67 @@ export default function Controls() {
     }
   };
 
-  const rates = Object.entries(draft.loanRates).sort(([a], [b]) => Number(a) - Number(b));
+  /** One set of loan settings: limits, fees, weekly/monthly, and a rate for every month up to the longest term. */
+  const lending = (set: keyof typeof LENDING) => {
+    const k = LENDING[set];
+    const card = draft[k.rates];
+    const months = Array.from({ length: Math.max(Number(draft[k.tenure]) || 0, 0) }, (_, i) => i + 1);
+    return (
+      <>
+        <Grid>
+          {num(k.min, 'Smallest loan (₦)')}
+          {num(k.max, 'Largest loan (₦)')}
+          {num(k.tenure, 'Longest term (months)')}
+          {num(k.flat, 'Flat management fee (₦)')}
+          {num(k.threshold, 'Flat fee up to (₦)')}
+          {num(k.feeRate, 'Management fee above that, of the loan')}
+          {num(k.repayFee, 'Transaction fee on each repayment', 'Added to every instalment, weekly or monthly. Nothing but the management fee comes off a payout.')}
+        </Grid>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {flag(k.weekly, 'Weekly repayment', 'Borrowers may choose to repay every week')}
+          {flag(k.monthly, 'Monthly repayment', 'Borrowers may choose to repay every month')}
+        </div>
+        <p className="mb-2 mt-5 text-sm font-bold">Flat rate by term</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {months.map((m) => {
+            const r = card[String(m)];
+            return (
+              <Input
+                key={m}
+                label={`${m} month${m === 1 ? '' : 's'}`}
+                type="number"
+                step="0.01"
+                suffix="%"
+                disabled={!editable}
+                value={r == null ? '' : String(Math.round(r * 10000) / 100)}
+                error={r == null ? 'Needs a rate' : undefined}
+                onChange={(e) => setDraft({ ...draft, [k.rates]: { ...card, [String(m)]: Number(e.target.value) / 100 } })}
+              />
+            );
+          })}
+        </div>
+      </>
+    );
+  };
+
+  /** Starts the group terms again from the standard ones. */
+  const copyStandardToGroup = () => {
+    const a = LENDING.standard;
+    const b = LENDING.group;
+    setDraft({
+      ...draft,
+      [b.rates]: { ...draft[a.rates] },
+      [b.min]: draft[a.min],
+      [b.max]: draft[a.max],
+      [b.tenure]: draft[a.tenure],
+      [b.flat]: draft[a.flat],
+      [b.threshold]: draft[a.threshold],
+      [b.feeRate]: draft[a.feeRate],
+      [b.repayFee]: draft[a.repayFee],
+      [b.weekly]: draft[a.weekly],
+      [b.monthly]: draft[a.monthly],
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -142,30 +253,22 @@ export default function Controls() {
       </Group>
 
       <Group title="Lending">
-        <Grid>
-          {num('minLoanAmount', 'Smallest loan (₦)')}
-          {num('maxLoanAmount', 'Largest loan (₦)')}
-          {num('maxLoanTenureMonths', 'Longest term (months)')}
-          {num('flatProcessingFee', 'Flat management fee (₦)')}
-          {num('processingFeeThreshold', 'Flat fee up to (₦)')}
-          {num('loanProcessingFeeRate', 'Management fee above that, of the loan')}
-          {num('loanTransactionFee', 'Transaction fee on every loan (₦)')}
-        </Grid>
-        <p className="mb-2 mt-5 text-sm font-bold">Flat rate by term</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          {rates.map(([m, r]) => (
-            <Input
-              key={m}
-              label={`${m} month${m === '1' ? '' : 's'}`}
-              type="number"
-              step="0.01"
-              suffix="%"
-              disabled={!editable}
-              value={String(Math.round(r * 10000) / 100)}
-              onChange={(e) => setDraft({ ...draft, loanRates: { ...draft.loanRates, [m]: Number(e.target.value) / 100 } })}
-            />
-          ))}
+        <p className="mb-4 text-[13px] text-ink-3">For everyone who is not in a loan group.</p>
+        {lending('standard')}
+      </Group>
+
+      <Group title="Group loans">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] text-ink-3">
+            For members of a loan group. Their loans are priced on these instead of the standard lending settings above.
+          </p>
+          {editable && (
+            <Button size="sm" variant="ghost" onClick={copyStandardToGroup}>
+              Copy from standard lending
+            </Button>
+          )}
         </div>
+        {lending('group')}
       </Group>
 
       <Group title="Wallet and circles">

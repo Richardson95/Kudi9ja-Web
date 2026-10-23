@@ -11,8 +11,9 @@ import {
   savingsApi,
   walletApi,
 } from '../lib/api/endpoints';
-import type { PaystackStatus, DepositStatus, LegalKind, LoanApplicationStatus, LoanStatus, TxFilter, WithdrawalStatus, AccountStatus, AuditCategory } from '../types/api';
+import type { PaystackStatus, DepositStatus, LegalKind, LoanApplicationStatus, LoanStatus, TxFilter, WithdrawalStatus, AccountStatus, AuditCategory, PublicSettings } from '../types/api';
 import { useSession } from '../state/session';
+import { useSettings } from '../state/settings';
 
 /** Query keys in one place, so a change knows exactly what to refresh. */
 export const keys = {
@@ -101,6 +102,18 @@ export const useLoan = (id: string) =>
 
 export const useEligibility = () =>
   useQuery({ queryKey: keys.eligibility, queryFn: loansApi.eligibility, enabled: useUnlocked() });
+
+/**
+ * The settings to price this customer's loan with: the loan-group terms for a
+ * member of a loan group, the standard terms for everybody else. Until the
+ * server has said which, the standard terms.
+ */
+export function useBorrowerSettings(): { settings: PublicSettings; groupPricing: boolean } {
+  const s = useSettings();
+  const e = useEligibility();
+  if (!e.data?.terms) return { settings: s, groupPricing: false };
+  return { settings: { ...s, lending: e.data.terms }, groupPricing: e.data.groupPricing };
+}
 
 export const useApplications = () =>
   useQuery({ queryKey: keys.applications, queryFn: loansApi.applications, enabled: useUnlocked() });
