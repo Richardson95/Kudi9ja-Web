@@ -94,7 +94,7 @@ export function StatTile({
   return (
     <div className={cn('rounded-2xl border border-stroke bg-surface p-4 shadow-card', className)}>
       {icon && <span className={cn('mb-3 block [&>svg]:h-[18px] [&>svg]:w-[18px]', badgeTones[tone].split(' ')[1])}>{icon}</span>}
-      <p className="num truncate text-xl font-extrabold tracking-[-0.02em]">{value}</p>
+      <p className="num text-xl font-extrabold tracking-[-0.02em] [overflow-wrap:anywhere]">{value}</p>
       <p className="mt-0.5 text-[12px] text-ink-3">{label}</p>
       {footnote && <p className="mt-1 text-[11px] font-semibold text-ink-3">{footnote}</p>}
     </div>

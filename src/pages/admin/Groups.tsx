@@ -13,7 +13,7 @@ import { Skeleton } from '../../components/ui/Spinner';
 import { useAction } from '../../hooks/useAction';
 import { keys } from '../../hooks/queries';
 import { groupsApi } from '../../lib/api/endpoints';
-import { formatNumber, nairaShort } from '../../lib/format';
+import { formatNumber, naira } from '../../lib/format';
 import { useSession } from '../../state/session';
 
 const groupKeys = { list: keys.admin.groups };
@@ -73,8 +73,8 @@ export default function Groups() {
               </p>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <Figure label="Members" value={String(g.members)} />
-                <Figure label="Lent" value={nairaShort(g.totalLent)} />
-                <Figure label="Owed" value={nairaShort(g.outstanding)} />
+                <Figure label="Lent" value={naira(g.totalLent)} />
+                <Figure label="Owed" value={naira(g.outstanding)} />
               </div>
               <p className="mt-3 text-[11.5px] text-ink-3">
                 {formatNumber(g.signedUp)} of {formatNumber(g.members)} signed up{g.overdueMembers ? ` · ${formatNumber(g.overdueMembers)} overdue` : ''}

@@ -8,7 +8,7 @@ import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Field';
 import { Skeleton } from '../../components/ui/Spinner';
 import { useAdminRepayments } from '../../hooks/queries';
-import { asDayTime, formatNumber, naira, nairaShort } from '../../lib/format';
+import { asDayTime, formatNumber, naira } from '../../lib/format';
 import type { AdminRepayment, RepaymentSource } from '../../types/api';
 
 const SOURCES: { value: RepaymentSource | 'ALL'; label: string }[] = [
@@ -59,18 +59,18 @@ export default function Repayments() {
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatTile
           label={filtered ? 'Repaid, matching' : 'Repaid in all'}
-          value={s ? nairaShort(s.total) : '—'}
+          value={s ? naira(s.total) : '—'}
           icon={<HandCoins />}
           tone="success"
           footnote={s ? `${formatNumber(s.count)} repayment${s.count === 1 ? '' : 's'}` : ''}
         />
-        <StatTile label="Today" value={s ? nairaShort(s.today) : '—'} icon={<CalendarDays />} footnote={s ? `${formatNumber(s.todayCount)} repayments` : ''} />
-        <StatTile label="This month" value={s ? nairaShort(s.thisMonth) : '—'} icon={<CalendarDays />} tone="info" footnote={s ? `${formatNumber(s.thisMonthCount)} repayments` : ''} />
+        <StatTile label="Today" value={s ? naira(s.today) : '—'} icon={<CalendarDays />} footnote={s ? `${formatNumber(s.todayCount)} repayments` : ''} />
+        <StatTile label="This month" value={s ? naira(s.thisMonth) : '—'} icon={<CalendarDays />} tone="info" footnote={s ? `${formatNumber(s.thisMonthCount)} repayments` : ''} />
         <StatTile
           label="Through Paystack"
-          value={s ? nairaShort(s.viaPaystack) : '—'}
+          value={s ? naira(s.viaPaystack) : '—'}
           icon={<CreditCard />}
-          footnote={s ? `Wallet ${nairaShort(s.fromWallet)} · by hand ${nairaShort(s.recordedByHand)}${s.bankTransfer ? ` · transfer ${nairaShort(s.bankTransfer)}` : ''}` : ''}
+          footnote={s ? `Wallet ${naira(s.fromWallet)} · by hand ${naira(s.recordedByHand)}${s.bankTransfer ? ` · transfer ${naira(s.bankTransfer)}` : ''}` : ''}
         />
       </div>
 

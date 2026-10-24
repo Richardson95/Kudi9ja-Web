@@ -6,7 +6,7 @@ import { Card, SectionHeader } from '../../components/ui/Card';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminApplications, useOverview } from '../../hooks/queries';
 import { useSupportSummary } from '../../hooks/support';
-import { formatNumber, naira, nairaShort, relative } from '../../lib/format';
+import { formatNumber, naira, relative } from '../../lib/format';
 import { auditStyle } from '../../lib/labels';
 import { useProfile } from '../../state/session';
 import { firstName } from '../../lib/format';
@@ -58,23 +58,23 @@ export default function Overview() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatTile label="Customer money held" value={nairaShort(o.customerFundsHeld)} icon={<Wallet />} footnote="Wallet balances" />
-        <StatTile label="Saved" value={nairaShort(o.book.totalSaved)} icon={<PiggyBank />} tone="info" footnote={`${formatNumber(o.book.activePlans)} active plans`} />
-        <StatTile label="Lent" value={nairaShort(o.book.totalLent)} icon={<CreditCard />} footnote={`${formatNumber(o.book.activeLoans)} active · ${formatNumber(o.book.repaidLoans)} repaid`} />
+        <StatTile label="Customer money held" value={naira(o.customerFundsHeld)} icon={<Wallet />} footnote="Wallet balances" />
+        <StatTile label="Saved" value={naira(o.book.totalSaved)} icon={<PiggyBank />} tone="info" footnote={`${formatNumber(o.book.activePlans)} active plans`} />
+        <StatTile label="Lent" value={naira(o.book.totalLent)} icon={<CreditCard />} footnote={`${formatNumber(o.book.activeLoans)} active · ${formatNumber(o.book.repaidLoans)} repaid`} />
         <Link to="/admin/repayments" className="block rounded-2xl transition hover:-translate-y-px">
           <StatTile
             className="h-full transition hover:border-gold/35"
             label="Repaid by customers"
-            value={nairaShort(o.book.totalRepaid)}
+            value={naira(o.book.totalRepaid)}
             icon={<HandCoins />}
             tone="success"
-            footnote={`${formatNumber(o.book.repayments)} repayments · ${nairaShort(o.book.repaidThisMonth)} this month`}
+            footnote={`${formatNumber(o.book.repayments)} repayments · ${naira(o.book.repaidThisMonth)} this month`}
           />
         </Link>
-        <StatTile label="Overdue" value={nairaShort(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.overdueLoans ? 'danger' : 'neutral'} footnote={`${formatNumber(o.book.overdueLoans)} loans`} />
-        <StatTile label="Interest charged" value={nairaShort(o.book.totalInterestCharged)} icon={<TrendingUp />} tone="success" />
-        <StatTile label="Fees charged" value={nairaShort(o.book.totalFeesCharged)} icon={<TrendingUp />} tone="success" />
-        <StatTile label="Interest paid out" value={nairaShort(o.book.totalInterestPaid)} icon={<PiggyBank />} />
+        <StatTile label="Overdue" value={naira(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.overdueLoans ? 'danger' : 'neutral'} footnote={`${formatNumber(o.book.overdueLoans)} loans`} />
+        <StatTile label="Interest charged" value={naira(o.book.totalInterestCharged)} icon={<TrendingUp />} tone="success" />
+        <StatTile label="Fees charged" value={naira(o.book.totalFeesCharged)} icon={<TrendingUp />} tone="success" />
+        <StatTile label="Interest paid out" value={naira(o.book.totalInterestPaid)} icon={<PiggyBank />} />
         {!customersOnTop && <StatTile label="Customers" value={formatNumber(o.people.customers)} icon={<Users />} footnote={customersNote} />}
       </div>
 
