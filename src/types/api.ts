@@ -772,7 +772,10 @@ export interface Overview {
     totalLent: Naira;
     totalInterestCharged: Naira;
     totalFeesCharged: Naira;
+    /** Owed on every instalment past its day, on all running loans. */
     totalOverdue: Naira;
+    /** Running loans with at least one missed instalment. */
+    loansBehind?: number;
     /** Still owed on the loans running now — loan, interest and fees, less repayments. */
     totalOutstanding: Naira;
     activePlans: number;

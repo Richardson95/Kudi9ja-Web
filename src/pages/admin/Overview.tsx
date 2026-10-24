@@ -75,7 +75,7 @@ export default function Overview() {
             footnote={`${formatNumber(o.book.repayments)} repayments · ${naira(o.book.repaidThisMonth)} this month`}
           />
         </Link>
-        <StatTile label="Overdue" value={naira(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.overdueLoans ? 'danger' : 'neutral'} footnote={`${formatNumber(o.book.overdueLoans)} loans`} />
+        <StatTile label="Overdue" value={naira(o.book.totalOverdue)} icon={<AlarmClock />} tone={o.book.totalOverdue > 0 ? 'danger' : 'neutral'} footnote={`${formatNumber(o.book.loansBehind ?? o.book.overdueLoans)} loans with missed payments`} />
         <StatTile label="Interest charged" value={naira(o.book.totalInterestCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Fees charged" value={naira(o.book.totalFeesCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Interest paid out" value={naira(o.book.totalInterestPaid)} icon={<PiggyBank />} />
