@@ -987,10 +987,25 @@ export interface CustomerLoanRecords {
   repayments: OfflineRepayment[];
 }
 
+/** Who a BVN already belongs to, so another loan goes on their account. */
+export interface BvnMatch {
+  found: boolean;
+  customerId?: string;
+  fullName?: string;
+  customerRef?: string;
+  accountStatusLabel?: string;
+  hasRunningLoan: boolean;
+}
+
 /** Everything an admin can type about an offline borrower. */
 export interface ImportLoanInput {
-  bvn: string;
-  fullName: string;
+  /** Needed unless customerId names the account. */
+  bvn?: string;
+  fullName?: string;
+  /** A customer already on the system: the loan goes on their account. */
+  customerId?: string;
+  /** Every repayment made before the loan was entered, each on its own day. */
+  repayments?: RecordRepaymentInput[];
   email?: string;
   phone?: string;
   principal: number;

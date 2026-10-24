@@ -22,6 +22,7 @@ import type {
   DraftResponse,
   Eligibility,
   Guarantor,
+  BvnMatch,
   ImportedLoan,
   ImportLoanInput,
   OfflineLoanFile,
@@ -538,6 +539,9 @@ export const adminApi = {
   /** Loans written outside the app, waiting for (or attached to) their borrower's account. */
   importedLoans: (claimed?: boolean) => http.get<ImportedLoan[]>('/admin/loans/imports', { claimed }),
   importLoan: (input: ImportLoanInput) => http.post<ImportedLoan>('/admin/loans/imports', input),
+  lookupBvn: (bvn: string) => http.get<BvnMatch>('/admin/loans/imports/lookup', { bvn }),
+  /** Takes back a repayment recorded by mistake; a loan it had closed runs again. */
+  removeRecordedRepayment: (repaymentId: string) => http.delete<void>(`/admin/loans/imports/repayments/${repaymentId}`),
   importedLoan: (id: string) => http.get<OfflineLoanFile>(`/admin/loans/imports/${id}`),
   updateImportedLoan: (id: string, input: OfflineLoanUpdate) =>
     http.patch<OfflineLoanFile>(`/admin/loans/imports/${id}`, input),

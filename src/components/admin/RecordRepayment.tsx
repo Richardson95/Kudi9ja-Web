@@ -7,7 +7,7 @@ import { Input, Select, Textarea } from '../ui/Field';
 import { AmountInput } from '../ui/Inputs';
 import { Modal } from '../ui/Modal';
 
-const METHODS: { value: RepaymentMethod; label: string }[] = [
+export const METHODS: { value: RepaymentMethod; label: string }[] = [
   { value: 'CASH', label: 'Cash' },
   { value: 'BANK_TRANSFER', label: 'Bank transfer to the company' },
   { value: 'POS', label: 'POS' },

@@ -153,6 +153,11 @@ export default function OfflineLoanDetail() {
               <p className="text-[12.5px] text-ink-3">
                 {naira(l.amountRepaid)} of {naira(l.totalRepayable)} repaid · due by {asDay(l.dueDate)}
               </p>
+              <Pill tone={l.outstanding > 0 ? 'info' : 'success'} className="mt-2">
+                {l.outstanding > 0
+                  ? 'Running'
+                  : `Closed${repayments.length ? ` on ${asDay(repayments.reduce((a, r) => (r.paidAt > a ? r.paidAt : a), repayments[0]!.paidAt))}` : ''}`}
+              </Pill>
             </div>
             {act && l.outstanding > 0 && (
               <Button icon={<HandCoins className="h-4 w-4" />} onClick={() => setRecording(true)}>
@@ -184,7 +189,30 @@ export default function OfflineLoanDetail() {
                       {r.reference ? ` · ${r.reference}` : ''}
                       <span className="block text-[11.5px] text-ink-3">by {r.recordedBy ?? 'the team'}{r.note ? ` · ${r.note}` : ''}</span>
                     </span>
-                    <span className="num font-bold text-success">{naira(r.amount)}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="num font-bold text-success">{naira(r.amount)}</span>
+                      {act && (
+                        <button
+                          type="button"
+                          className="text-ink-3 hover:text-danger"
+                          aria-label="Remove repayment"
+                          onClick={async () => {
+                            const ok = await dialogs.confirm({
+                              title: `Remove the ${naira(r.amount)} repayment of ${asDay(r.paidAt)}?`,
+                              message: 'For one recorded by mistake. It comes off what the loan has repaid, and a loan it had closed is running again. Record it again to correct it.',
+                              confirmLabel: 'Remove',
+                              danger: true,
+                            });
+                            if (ok && (await run(() => adminApi.removeRecordedRepayment(r.id), 'Repayment removed'))) {
+                              await reload();
+                              await refresh.admin();
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>

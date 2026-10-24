@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Flag, MessagesSquare, ReceiptText, ShieldCheck, Snowflake, Undo2, UserRound } from 'lucide-react';
+import { Ban, Flag, MessagesSquare, Plus, ReceiptText, ShieldCheck, Snowflake, Trash2, Undo2, UserRound } from 'lucide-react';
 import { DocumentGrid, type DocItem } from '../../components/admin/Documents';
 import { OfficersPanel } from '../../components/admin/OfficersPanel';
 import { RecordRepayment } from '../../components/admin/RecordRepayment';
@@ -186,11 +186,39 @@ function LoansTab({ id }: { id: string }) {
   const { adminRole } = useSession();
   const qc = useQueryClient();
   const [recording, setRecording] = useState<Loan | null>(null);
+  const dialogs = useDialogs();
+  const { run } = useAction();
   const mine = (apps.data?.items ?? []).filter((a) => a.userId === id);
   const repayments = records.data?.repayments ?? [];
+  const act = can.actOnLoans(adminRole);
+  // Loans the team entered by hand, by the loan they became.
+  const entered = new Map((records.data?.importedLoans ?? []).filter((l) => l.loanId).map((l) => [l.loanId!, l]));
+  const loanName = (loanId?: string) => {
+    const l = loans.data?.find((x) => x.id === loanId);
+    return l ? `${naira(l.principal)} ${l.purpose.toLowerCase()} loan, paid out ${asDay(l.disbursedAt)}` : null;
+  };
+  const removeRepayment = async (r: (typeof repayments)[number]) => {
+    const ok = await dialogs.confirm({
+      title: `Remove the ${naira(r.amount)} repayment of ${asDay(r.paidAt)}?`,
+      message: 'For one recorded by mistake. It comes off what the loan has repaid, and a loan it had closed is running again. Record it again to correct it.',
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (ok && (await run(() => adminApi.removeRecordedRepayment(r.id), 'Repayment removed'))) {
+      await qc.invalidateQueries({ queryKey: ['admin', 'customer', id] });
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {act && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] text-ink-2">Loans given outside the app — repaid ones and the one running now — are added here one at a time.</p>
+          <Button size="sm" icon={<Plus className="h-4 w-4" />} to={`/admin/lending/offline/new?customer=${id}`}>
+            Add a loan given outside the app
+          </Button>
+        </div>
+      )}
       {loans.isLoading ? (
         <Skeleton className="h-32 w-full" />
       ) : loans.data?.length ? (
@@ -202,9 +230,17 @@ function LoansTab({ id }: { id: string }) {
                   <p className="font-bold">{l.purpose}</p>
                   <p className="text-[12.5px] text-ink-3">
                     {naira(l.principal)} · {termPhrase(l.tenureMonths, l.repaymentFrequency)} · {l.flatRateLabel} · disbursed {asDay(l.disbursedAt)}
+                    {l.status === 'REPAID' && l.settledAt ? ` · closed ${asDay(l.settledAt)}` : ''}
                   </p>
                 </div>
-                <Pill tone={loanTone(l.status)}>{l.statusLabel}</Pill>
+                <div className="flex flex-col items-end gap-1">
+                  <Pill tone={loanTone(l.status)}>{l.statusLabel}</Pill>
+                  {entered.has(l.id) && (
+                    <Link to={`/admin/lending/offline/${entered.get(l.id)!.id}`}>
+                      <Pill tone="neutral">Recorded manually</Pill>
+                    </Link>
+                  )}
+                </div>
               </div>
               <DetailRows
                 className="mt-4"
@@ -244,10 +280,16 @@ function LoansTab({ id }: { id: string }) {
                   </p>
                   <p className="text-[12px] text-ink-3">
                     Received {asDay(r.paidAt)} · recorded by {r.recordedBy ?? 'the team'}
+                    {loanName(r.loanId) ? ` · ${loanName(r.loanId)}` : ''}
                     {r.reference ? ` · ${r.reference}` : ''}
                     {r.note ? ` · ${r.note}` : ''}
                   </p>
                 </div>
+                {act && (
+                  <button type="button" onClick={() => void removeRepayment(r)} className="text-ink-3 hover:text-danger" aria-label="Remove repayment">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </li>
             ))}
           </ul>
