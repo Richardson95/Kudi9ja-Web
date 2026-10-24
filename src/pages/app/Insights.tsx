@@ -6,7 +6,7 @@ import { EmptyState, StatTile } from '../../components/ui/Bits';
 import { Card, SectionHeader } from '../../components/ui/Card';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useDashboard, useTransactions } from '../../hooks/queries';
-import { naira, nairaShort } from '../../lib/format';
+import { naira, nairaFlat } from '../../lib/format';
 import type { Transaction, TxKind } from '../../types/api';
 
 const KIND_LABEL: Record<TxKind, string> = {
@@ -68,7 +68,7 @@ export default function Insights() {
               <BarChart data={data.months} barGap={4}>
                 <CartesianGrid vertical={false} stroke="rgb(var(--stroke))" />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: 'rgb(var(--ink-3))', fontSize: 12 }} />
-                <YAxis tickFormatter={(v: number) => nairaShort(v)} tickLine={false} axisLine={false} width={64} tick={{ fill: 'rgb(var(--ink-3))', fontSize: 12 }} />
+                <YAxis tickFormatter={(v: number) => nairaFlat(v)} tickLine={false} axisLine={false} width={96} tick={{ fill: 'rgb(var(--ink-3))', fontSize: 12 }} />
                 <Tooltip
                   cursor={{ fill: 'rgb(var(--surface-alt))' }}
                   contentStyle={{ background: 'rgb(var(--surface))', border: '1px solid rgb(var(--stroke))', borderRadius: 12 }}
@@ -130,7 +130,7 @@ function Donut({ rows }: { rows: { name: string; value: number }[] }) {
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
           <div>
             <p className="text-[11px] text-ink-3">Total</p>
-            <p className="num text-lg font-extrabold">{nairaShort(total)}</p>
+            <p className="num text-base font-extrabold">{naira(total)}</p>
           </div>
         </div>
       </div>

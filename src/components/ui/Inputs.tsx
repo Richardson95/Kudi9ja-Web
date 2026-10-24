@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { FileText, ImagePlus, RefreshCw, UploadCloud, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
-import { fileSize, formatAmountInput, nairaShort } from '../../lib/format';
+import { fileSize, formatAmountInput, nairaFlat } from '../../lib/format';
 
 /** The big centred naira field from the app's money screens. */
 export function AmountInput({
@@ -58,7 +58,7 @@ export function QuickAmounts({ amounts, onPick, className }: { amounts: number[]
           onClick={() => onPick(a)}
           className="rounded-full border border-stroke bg-surface px-3.5 py-1.5 text-[12.5px] font-bold text-ink-2 transition hover:border-gold/50 hover:text-gold"
         >
-          {nairaShort(a)}
+          {nairaFlat(a)}
         </button>
       ))}
     </div>
