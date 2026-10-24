@@ -27,13 +27,19 @@ export default function Overview() {
     { to: '/admin/support', icon: <MessagesSquare />, label: 'Conversations waiting', count: s?.open ?? 0, late: s?.overdue ?? 0 },
     { to: '/admin/payments', icon: <ArrowDownLeft />, label: 'Older receipt claims', count: o.queues.pendingPayIns, value: o.queues.pendingPayInValue, late: o.queues.payInsBreachingSla },
   ].filter((q) => q.count > 0 || q.label !== 'Older receipt claims');
+  const customersNote = `${formatNumber(o.people.newThisWeek)} new this week · ${formatNumber(o.people.frozenCustomers)} frozen`;
+  // Customers fills the top row when there's room; otherwise it sits with the figures below.
+  const customersOnTop = queues.length < 4;
+  const topCards: { to: string; icon: JSX.Element; label: string; count: number; value?: number; late?: number; note?: string }[] = customersOnTop
+    ? [...queues, { to: '/admin/customers', icon: <Users />, label: 'Customers', count: o.people.customers, note: customersNote }]
+    : queues;
 
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Overview" title={`Good to see you, ${firstName(profile.fullName)}`} subtitle={`Updated ${relative(o.generatedAt)}`} />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {queues.map((q) => (
+        {topCards.map((q) => (
           <Link key={q.label} to={q.to} className="rounded-2xl border border-stroke bg-surface p-4 transition hover:-translate-y-px hover:border-gold/40">
             <div className="flex items-center justify-between">
               <IconBadge size={38} tone={q.count ? 'gold' : 'neutral'}>{q.icon}</IconBadge>
@@ -46,6 +52,7 @@ export default function Overview() {
             <p className="num mt-3 text-3xl font-extrabold">{formatNumber(q.count)}</p>
             <p className="text-[13px] text-ink-2">{q.label}</p>
             {q.value !== undefined && <p className="num text-[12px] text-ink-3">{naira(q.value)}</p>}
+            {q.note && <p className="text-[12px] text-ink-3">{q.note}</p>}
           </Link>
         ))}
       </div>
@@ -68,7 +75,7 @@ export default function Overview() {
         <StatTile label="Interest charged" value={nairaShort(o.book.totalInterestCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Fees charged" value={nairaShort(o.book.totalFeesCharged)} icon={<TrendingUp />} tone="success" />
         <StatTile label="Interest paid out" value={nairaShort(o.book.totalInterestPaid)} icon={<PiggyBank />} />
-        <StatTile label="Customers" value={formatNumber(o.people.customers)} icon={<Users />} footnote={`${formatNumber(o.people.newThisWeek)} new this week · ${formatNumber(o.people.frozenCustomers)} frozen`} />
+        {!customersOnTop && <StatTile label="Customers" value={formatNumber(o.people.customers)} icon={<Users />} footnote={customersNote} />}
       </div>
 
       <Card padded={false}>
