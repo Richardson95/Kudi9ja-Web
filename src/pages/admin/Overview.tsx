@@ -1,11 +1,10 @@
-import { AlarmClock, ArrowDownLeft, ArrowUpRight, ClipboardList, CreditCard, HandCoins, MessagesSquare, PiggyBank, TrendingUp, Users, Wallet } from 'lucide-react';
+import { AlarmClock, ArrowDownLeft, ArrowUpRight, ClipboardList, CreditCard, HandCoins, Landmark, PiggyBank, TrendingUp, Users, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { IconBadge, StatTile } from '../../components/ui/Bits';
 import { Card, SectionHeader } from '../../components/ui/Card';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminApplications, useOverview } from '../../hooks/queries';
-import { useSupportSummary } from '../../hooks/support';
 import { formatNumber, naira, relative } from '../../lib/format';
 import { auditStyle } from '../../lib/labels';
 import { useProfile } from '../../state/session';
@@ -14,23 +13,28 @@ import { firstName } from '../../lib/format';
 export default function Overview() {
   const overview = useOverview();
   const applications = useAdminApplications('PENDING');
-  const support = useSupportSummary();
   const profile = useProfile();
   if (overview.isLoading) return <PageSpinner />;
   const o = overview.data;
   if (!o) return null;
-  const s = support.data;
 
   const queues = [
     { to: '/admin/payments', icon: <ArrowUpRight />, label: 'Withdrawals to approve', count: o.queues.pendingWithdrawals, value: o.queues.pendingWithdrawalValue, late: o.queues.withdrawalsBreachingSla },
     { to: '/admin/lending', icon: <ClipboardList />, label: 'Loan applications', count: applications.data?.totalItems ?? 0 },
-    { to: '/admin/support', icon: <MessagesSquare />, label: 'Conversations waiting', count: s?.open ?? 0, late: s?.overdue ?? 0 },
+    {
+      to: '/admin/lending',
+      icon: <Landmark />,
+      label: 'Still owed on running loans',
+      count: o.book.activeLoans + o.book.overdueLoans,
+      figure: naira(o.book.totalOutstanding),
+      note: `${formatNumber(o.book.activeLoans + o.book.overdueLoans)} running · falls with every repayment`,
+    },
     { to: '/admin/payments', icon: <ArrowDownLeft />, label: 'Older receipt claims', count: o.queues.pendingPayIns, value: o.queues.pendingPayInValue, late: o.queues.payInsBreachingSla },
   ].filter((q) => q.count > 0 || q.label !== 'Older receipt claims');
   const customersNote = `${formatNumber(o.people.newThisWeek)} new this week · ${formatNumber(o.people.frozenCustomers)} frozen`;
   // Customers fills the top row when there's room; otherwise it sits with the figures below.
   const customersOnTop = queues.length < 4;
-  const topCards: { to: string; icon: JSX.Element; label: string; count: number; value?: number; late?: number; note?: string }[] = customersOnTop
+  const topCards: { to: string; icon: JSX.Element; label: string; count: number; figure?: string; value?: number; late?: number; note?: string }[] = customersOnTop
     ? [...queues, { to: '/admin/customers', icon: <Users />, label: 'Customers', count: o.people.customers, note: customersNote }]
     : queues;
 
@@ -49,7 +53,7 @@ export default function Overview() {
                 </span>
               )}
             </div>
-            <p className="num mt-3 text-3xl font-extrabold">{formatNumber(q.count)}</p>
+            <p className="num mt-3 text-3xl font-extrabold [overflow-wrap:anywhere]">{q.figure ?? formatNumber(q.count)}</p>
             <p className="text-[13px] text-ink-2">{q.label}</p>
             {q.value !== undefined && <p className="num text-[12px] text-ink-3">{naira(q.value)}</p>}
             {q.note && <p className="text-[12px] text-ink-3">{q.note}</p>}

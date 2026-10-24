@@ -773,6 +773,8 @@ export interface Overview {
     totalInterestCharged: Naira;
     totalFeesCharged: Naira;
     totalOverdue: Naira;
+    /** Still owed on the loans running now — loan, interest and fees, less repayments. */
+    totalOutstanding: Naira;
     activePlans: number;
     maturedPlans: number;
     activeLoans: number;
