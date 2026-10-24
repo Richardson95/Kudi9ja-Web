@@ -47,6 +47,11 @@ interface PendingDoc {
  * borrower. They appear among customers as "not signed up"; when they sign up
  * with the same BVN, the loan, its file and its officers attach to their account.
  */
+/** A whole yyyy-mm-dd day that exists. */
+function isRealDay(day: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) && !Number.isNaN(new Date(`${day}T12:00:00`).getTime());
+}
+
 export default function NewOfflineLoan() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -120,18 +125,20 @@ export default function NewOfflineLoan() {
   const rate = (Number(f.ratePct) || 0) / 100;
   const feeRate = !feesTouched.transaction ? repaymentFeeRateFor(settings) : (Number(f.feePct) || 0) / 100;
   const repaid = payments.reduce((sum, p) => sum + parseAmount(p.amount), 0);
+  // A date box being typed into can hold an empty or impossible day for a moment.
   const payoutDay = new Date(`${f.disbursedAt}T12:00:00`);
-  const schedule = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, payoutDay, repaid, undefined, frequency, { feeRate }) : [];
-  const count = schedule.length || instalmentCount(frequency, months, payoutDay);
+  const payoutKnown = isRealDay(f.disbursedAt);
+  const schedule = payoutKnown && principal > 0 && months > 0 ? buildSchedule(principal, rate, months, payoutDay, repaid, undefined, frequency, { feeRate }) : [];
+  const count = schedule.length || (payoutKnown ? instalmentCount(frequency, months, payoutDay) : 0);
   const loanTotal = schedule.reduce((sum, r) => sum + r.base, 0);
   const fees = schedule.reduce((sum, r) => sum + r.fee, 0);
   const owed = loanTotal + fees;
   const outstanding = Math.max(owed - repaid, 0);
   const today = isoDate(new Date());
-  const lastPaid = payments.reduce((last, p) => (p.paidOn > last ? p.paidOn : last), '');
+  const lastPaid = payments.reduce((last, p) => (isRealDay(p.paidOn) && p.paidOn > last ? p.paidOn : last), '');
   const closed = owed > 0 && outstanding <= 0.005;
   const paymentError = (p: PastPayment) =>
-    !p.paidOn ? 'Enter the day' : p.paidOn > today ? 'Not yet come' : p.paidOn < f.disbursedAt ? 'Before the payout' : parseAmount(p.amount) <= 0 ? 'Enter the amount' : null;
+    !isRealDay(p.paidOn) ? 'Enter the day' : p.paidOn > today ? 'Not yet come' : p.paidOn < f.disbursedAt ? 'Before the payout' : parseAmount(p.amount) <= 0 ? 'Enter the amount' : null;
 
   // Both come off the payout: the management fee, and an older loan's flat fee.
   const takenAtPayout = parseAmount(f.processingFee) + parseAmount(f.payoutFee);
@@ -149,13 +156,13 @@ export default function NewOfflineLoan() {
   const who = existing ? true : /^\d{11}$/.test(f.bvn) && f.fullName.trim().split(/\s+/).length >= 2;
   const valid =
     who && (!customerId || !!existing) && principal > 0 && months >= 1 && months <= 60 &&
-    rate > 0 && rate <= 3 && !!chosen && !!f.purpose && !!f.disbursedAt && f.disbursedAt <= today && Object.values(errors).every((e) => !e) &&
+    rate > 0 && rate <= 3 && !!chosen && !!f.purpose && payoutKnown && f.disbursedAt <= today && Object.values(errors).every((e) => !e) &&
     guarantors.every((g) => g.fullName.trim());
 
   const setPayment = (i: number, patch: Partial<PastPayment>) => setPayments((all) => all.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   // Every instalment already due, as paid on its day — then correct the ones that were not.
   const fillFromSchedule = () => {
-    const plan = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, payoutDay, 0, undefined, frequency, { feeRate }) : [];
+    const plan = payoutKnown && principal > 0 && months > 0 ? buildSchedule(principal, rate, months, payoutDay, 0, undefined, frequency, { feeRate }) : [];
     setPayments(
       plan
         .filter((r) => isoDate(r.dueDate) <= today)
