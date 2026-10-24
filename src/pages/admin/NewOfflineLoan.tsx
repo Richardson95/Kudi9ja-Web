@@ -332,7 +332,7 @@ export default function NewOfflineLoan() {
                 inputMode="numeric"
                 value={f.payoutFee}
                 onChange={(e) => set('payoutFee')(formatAmountInput(e.target.value))}
-                hint="Older loans only, like the old ₦2,000 fee. Leave empty if none. Set the fee on each repayment below to 0 if that loan had none."
+                hint="A one-off amount cut from the money paid out, like the old ₦2,000 fee. Leave empty if none was taken."
               />
               <Input
                 label="Transaction fee on each repayment (%)"
