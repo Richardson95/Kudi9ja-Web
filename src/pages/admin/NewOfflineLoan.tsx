@@ -63,7 +63,7 @@ export default function NewOfflineLoan() {
   const [f, setF] = useState({
     bvn: '', fullName: '', email: '', phone: '', nin: '', dateOfBirth: '', gender: '', address: '', state: '', occupation: '',
     businessName: '', businessAddress: '', monthlyIncome: '',
-    principal: '', tenureMonths: '6', ratePct: '25', processingFee: '', feePct: '', purpose: '', disbursedAt: isoDate(new Date()),
+    principal: '', tenureMonths: '6', ratePct: '25', processingFee: '', payoutFee: '', feePct: '', purpose: '', disbursedAt: isoDate(new Date()),
     payoutBank: '', payoutAccountNumber: '', notes: '',
   });
   const [payments, setPayments] = useState<PastPayment[]>([]);
@@ -133,12 +133,15 @@ export default function NewOfflineLoan() {
   const paymentError = (p: PastPayment) =>
     !p.paidOn ? 'Enter the day' : p.paidOn > today ? 'Not yet come' : p.paidOn < f.disbursedAt ? 'Before the payout' : parseAmount(p.amount) <= 0 ? 'Enter the amount' : null;
 
+  // Both come off the payout: the management fee, and an older loan's flat fee.
+  const takenAtPayout = parseAmount(f.processingFee) + parseAmount(f.payoutFee);
+
   const errors = {
     bvn: !existing?.id && f.bvn && !/^\d{11}$/.test(f.bvn) ? 'Eleven digits' : null,
     nin: f.nin && !/^\d{11}$/.test(f.nin) ? 'Eleven digits' : null,
     account: f.payoutAccountNumber && !/^\d{10}$/.test(f.payoutAccountNumber) ? 'Ten digits' : null,
     repaid: repaid > owed + 0.005 && owed > 0 ? `More than the ${naira(owed)} owed` : null,
-    fee: parseAmount(f.processingFee) >= principal && principal > 0 ? 'The fee cannot be as much as the loan' : null,
+    fee: takenAtPayout >= principal && principal > 0 ? 'The fees cannot be as much as the loan' : null,
     feePct: feeRate < 0 || feeRate > 0.2 ? 'Between 0% and 20%' : null,
     payments: payments.some((p) => paymentError(p)) ? 'Check the repayments' : null,
     running: existing?.running && !closed && owed > 0 ? 'Already has a running loan' : null,
@@ -183,6 +186,7 @@ export default function NewOfflineLoan() {
         repaymentFeeRate: feeRate,
         flatRate: rate,
         processingFee: parseAmount(f.processingFee) || undefined,
+        transactionFee: parseAmount(f.payoutFee) || undefined,
         purpose: f.purpose,
         disbursedAt: new Date(`${f.disbursedAt}T12:00:00`).toISOString(),
         // Midday, so no time zone moves the day.
@@ -315,6 +319,13 @@ export default function NewOfflineLoan() {
                 }}
                 error={errors.fee}
                 hint="What was actually taken. Starts at today's rule."
+              />
+              <Input
+                label="Flat fee taken at payout (₦)"
+                inputMode="numeric"
+                value={f.payoutFee}
+                onChange={(e) => set('payoutFee')(formatAmountInput(e.target.value))}
+                hint="Older loans only, like the old ₦2,000 fee. Leave empty if none. Set the fee on each repayment below to 0 if that loan had none."
               />
               <Input
                 label="Transaction fee on each repayment (%)"
@@ -471,7 +482,8 @@ export default function NewOfflineLoan() {
               rows={[
                 ['Lent', naira(principal)],
                 ['Management fee', `- ${naira(parseAmount(f.processingFee))}`],
-                { label: 'Paid out to the borrower', value: naira(Math.max(principal - parseAmount(f.processingFee), 0)), tone: 'gold' },
+                parseAmount(f.payoutFee) > 0 ? ['Flat fee at payout', `- ${naira(parseAmount(f.payoutFee))}`] : null,
+                { label: 'Paid out to the borrower', value: naira(Math.max(principal - takenAtPayout, 0)), tone: 'gold' },
                 ['Interest', naira(Math.max(loanTotal - principal, 0))],
                 ['Loan and interest', naira(loanTotal)],
                 [`Transaction fees (${feeRateLabel(feeRate)} of each repayment)`, naira(fees)],
