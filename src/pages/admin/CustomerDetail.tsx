@@ -34,6 +34,8 @@ export default function CustomerDetail() {
   const on = stage === 'unlocked' && isAdmin && !!id;
   const [tab, setTab] = useState<Tab>('overview');
   const customer = useQuery({ queryKey: keys.admin.customer(id), queryFn: () => adminApi.customer(id), enabled: on });
+  // Loans closed and what came back on them, entered ones included: the wallet figures alone miss them.
+  const loans = useCustomerQuery('loans', id, () => adminApi.customerLoans(id));
   const dialogs = useDialogs();
   const qc = useQueryClient();
   const { busy, run } = useAction();
@@ -43,6 +45,8 @@ export default function CustomerDetail() {
   if (!c) return <EmptyState icon={<UserRound />} title="Customer not found" action={<Button to="/admin/customers">Back</Button>} />;
   const f = c.financials;
   const manage = can.manageCustomers(adminRole);
+  const closedLoans = (loans.data ?? []).filter((l) => l.status === 'REPAID').length;
+  const repaidOnLoans = (loans.data ?? []).reduce((sum, l) => sum + Number(l.amountRepaid), 0);
 
   const setStatus = async (status: AccountStatus, title: string) => {
     const reason = await dialogs.reason({ title, message: 'Recorded in the audit log, and the customer is told.', placeholder: 'Reason', confirmLabel: title, danger: status !== 'ACTIVE' });
@@ -113,8 +117,8 @@ export default function CustomerDetail() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Wallet" value={naira(f.balance)} footnote={f.pendingWithdrawals ? `${naira(f.pendingWithdrawals)} withdrawing` : undefined} />
         <StatTile label="Saved" value={naira(f.totalSaved)} tone="info" footnote={`${f.activePlans} of ${f.totalPlans} plans active`} />
-        <StatTile label="Owes" value={naira(f.totalOwed)} tone={f.overdueLoans ? 'danger' : 'neutral'} footnote={`${f.activeLoans} open · ${f.overdueLoans} overdue`} />
-        <StatTile label="Paid in, all time" value={naira(f.totalDeposited)} tone="success" footnote={`${formatNumber(f.transactionCount)} transactions`} />
+        <StatTile label="Owes" value={naira(f.totalOwed)} tone={f.overdueLoans ? 'danger' : 'neutral'} footnote={`${f.activeLoans} open · ${f.overdueLoans} overdue · ${closedLoans} closed`} />
+        <StatTile label="Repaid on loans" value={naira(repaidOnLoans)} tone="success" footnote={`${naira(f.totalDeposited)} paid into the wallet · ${formatNumber(f.transactionCount)} transactions`} />
       </div>
 
       <Segmented<Tab>
