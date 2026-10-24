@@ -105,7 +105,7 @@ export default function NewOfflineLoan() {
   );
   // The fees start at today's rules — management fee by amount, the flat
   // transaction fee — and the admin corrects them to what was actually taken.
-  const [feesTouched, setFeesTouched] = useState({ management: false });
+  const [feesTouched, setFeesTouched] = useState({ management: false, transaction: false });
   const setPrincipal = (v: string) => {
     const amount = parseAmount(v);
     setF((o) => ({
@@ -118,7 +118,7 @@ export default function NewOfflineLoan() {
   const principal = parseAmount(f.principal);
   const months = Number(f.tenureMonths) || 0;
   const rate = (Number(f.ratePct) || 0) / 100;
-  const feeRate = f.feePct === '' ? repaymentFeeRateFor(settings) : (Number(f.feePct) || 0) / 100;
+  const feeRate = !feesTouched.transaction ? repaymentFeeRateFor(settings) : (Number(f.feePct) || 0) / 100;
   const repaid = payments.reduce((sum, p) => sum + parseAmount(p.amount), 0);
   const payoutDay = new Date(`${f.disbursedAt}T12:00:00`);
   const schedule = principal > 0 && months > 0 ? buildSchedule(principal, rate, months, payoutDay, repaid, undefined, frequency, { feeRate }) : [];
@@ -333,10 +333,13 @@ export default function NewOfflineLoan() {
                 min={0}
                 max={20}
                 step="0.5"
-                value={f.feePct === '' ? String(Math.round(repaymentFeeRateFor(settings) * 10000) / 100) : f.feePct}
-                onChange={(e) => set('feePct')(e.target.value)}
+                value={!feesTouched.transaction ? String(Math.round(repaymentFeeRateFor(settings) * 10000) / 100) : f.feePct}
+                onChange={(e) => {
+                  setFeesTouched((t) => ({ ...t, transaction: true }));
+                  set('feePct')(e.target.value);
+                }}
                 error={errors.feePct}
-                hint="Added to every instalment, rounded up to the naira. Starts at today's rate."
+                hint="Added to every instalment, rounded up to the naira. Starts at today's rate; type 0 if none was charged."
               />
               <Input label="Date paid out *" type="date" max={today} value={f.disbursedAt} onChange={(e) => set('disbursedAt')(e.target.value)} />
             </Grid>
