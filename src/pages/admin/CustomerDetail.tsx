@@ -75,13 +75,13 @@ export default function CustomerDetail() {
               <Pill tone="gold">{c.kycTierLabel}</Pill>
               {c.isAdmin && <Pill tone="info">Admin · {c.adminRole?.toLowerCase()}</Pill>}
             </div>
-            <p className="mt-1 text-[13px] text-ink-3">
+            <p className="mt-1 break-words text-[13px] text-ink-3">
               {c.email ?? 'No email yet'} · {c.phone ?? 'No phone'} · last active {c.lastActiveAt ? relative(c.lastActiveAt) : 'never'}
             </p>
             {c.statusNote && <p className="mt-1 text-[12.5px] text-ink-2">Note: {c.statusNote}</p>}
           </div>
           {manage && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               {c.accountStatus === 'FROZEN' ? (
                 <Button size="sm" variant="ghost" loading={busy} icon={<Undo2 className="h-4 w-4" />} onClick={() => void setStatus('ACTIVE', 'Unfreeze')}>
                   Unfreeze
