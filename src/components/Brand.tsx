@@ -21,7 +21,7 @@ export function BrandLogo({ height = 30, to, className }: { height?: number; to?
   const img = (
     <img
       src="/brand/logo_gold.png"
-      alt="Kudi9ja — pay smart, pay global"
+      alt="Kudi9ja — easy money"
       style={{ height }}
       className={cn('w-auto select-none object-contain', className)}
       draggable={false}

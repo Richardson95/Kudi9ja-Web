@@ -5,7 +5,7 @@ import { cn } from '../lib/cn';
 
 export function usePageTitle(title: string) {
   useEffect(() => {
-    document.title = title ? `${title} · Kudi9ja` : 'Kudi9ja — Pay smart. Pay global.';
+    document.title = title ? `${title} · Kudi9ja` : 'Kudi9ja — Easy money.';
   }, [title]);
 }
 

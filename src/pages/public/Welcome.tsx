@@ -38,7 +38,7 @@ export default function Welcome() {
       {/* Hero */}
       <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-10 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:pt-16">
         <div className="animate-rise">
-          <p className="eyebrow mb-4 text-gold">Pay smart. Pay global.</p>
+          <p className="eyebrow mb-4 text-gold">Easy money.</p>
           <h1 className="text-[44px] font-extrabold leading-[1.02] tracking-[-0.04em] sm:text-[60px]">
             Earn {rate}.
             <br />

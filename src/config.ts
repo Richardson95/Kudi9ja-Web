@@ -5,7 +5,7 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').rep
 export const DEVICE_LABEL = 'Kudi9ja web';
 
 export const APP_NAME = 'Kudi9ja';
-export const TAGLINE = 'Pay smart. Pay global.';
+export const TAGLINE = 'Easy money.';
 export const APP_VERSION = '1.0.0';
 
 /** Code lengths are fixed: every stored code is a hash of a code this long. */
