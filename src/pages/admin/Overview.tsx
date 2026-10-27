@@ -97,12 +97,10 @@ export default function Overview() {
                 </IconBadge>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">{a.action}</p>
-                  <p className="text-[12.5px] text-ink-3">{a.detail}</p>
+                  <p className="break-words text-[12.5px] text-ink-3">{a.detail}</p>
+                  <p className="mt-0.5 truncate text-[11.5px] text-ink-3">{a.actor}</p>
                 </div>
-                <div className="shrink-0 text-right text-[11.5px] text-ink-3">
-                  <p>{relative(a.date)}</p>
-                  <p>{a.actor}</p>
-                </div>
+                <p className="shrink-0 text-right text-[11.5px] text-ink-3">{relative(a.date)}</p>
               </li>
             );
           })}
