@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { BriefcaseBusiness, Lock, PiggyBank, ShieldCheck, UserRound, Wallet } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { BrandLogo } from '../components/Brand';
-import { nairaShort, ratePct } from '../lib/format';
+import { PromiseHeading, PromiseList } from '../components/Promises';
 import { useSettings } from '../state/settings';
 
 /**
@@ -12,13 +12,6 @@ import { useSettings } from '../state/settings';
  */
 export function AuthShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
   const s = useSettings();
-  const pillars = [
-    { icon: BriefcaseBusiness, title: 'Employer-Guaranteed Employee Loans', text: 'Your employer guarantees the loan, so you can get money for what you need before your salary comes in.' },
-    { icon: UserRound, title: `Personal loans up to ${nairaShort(s.lending.maxAmount)}`, text: 'Borrow in your own name, at a flat rate set by the tenure you choose, and repay monthly or weekly.' },
-    { icon: Wallet, title: 'Straight to your wallet', text: 'Approved loans land in your Kudi9ja wallet, with a repayment plan you can read at a glance.' },
-    { icon: PiggyBank, title: `${ratePct(s.savings.annualRate * 100)} a year, paid upfront`, text: 'Lock any amount and your full return lands in your wallet the moment the plan starts.' },
-    { icon: ShieldCheck, title: 'Two keys on every naira', text: 'A sign-in passcode to get in, and a separate transaction PIN for everything that moves money.' },
-  ];
 
   return (
     <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
@@ -28,22 +21,8 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
         <div className="relative flex flex-1 flex-col px-14 py-12">
           <BrandLogo height={48} to="/" />
           <div className="my-auto max-w-md py-12">
-            <h2 className="text-[40px] font-extrabold leading-[1.08] tracking-[-0.035em]">
-              Easy Money, <span className="gold-text">that resolves your needs!</span>
-            </h2>
-            <div className="mt-9 space-y-5">
-              {pillars.map(({ icon: Icon, title, text }, i) => (
-                <div key={title} className="flex animate-rise gap-4" style={{ animationDelay: `${150 + i * 90}ms` }}>
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-gold/25 bg-gold/10 text-gold">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="font-extrabold">{title}</p>
-                    <p className="mt-0.5 text-[13.5px] leading-relaxed text-ink-2">{text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PromiseHeading as="h2" className="text-[40px] leading-[1.08]" />
+            <PromiseList className="mt-9" />
           </div>
           <p className="flex items-center gap-2 text-[12px] text-ink-3">
             <Lock className="h-3.5 w-3.5" /> {s.company.legalName} · {s.company.rcNumber}

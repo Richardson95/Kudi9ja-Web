@@ -2,10 +2,11 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Calculator, CheckCircle2, Fingerprint, Landmark, Lock, Menu, PiggyBank, ShieldCheck, Users, X, Zap } from 'lucide-react';
 import { BrandLogo, BrandMark } from '../../components/Brand';
+import { PromiseHeading, PromiseList } from '../../components/Promises';
 import { usePageTitle } from '../../components/PageHeader';
 import { Button } from '../../components/ui/Button';
-import { lockPeriodShort, naira, nairaFlat, nairaShort, ratePct } from '../../lib/format';
-import { effectiveYieldPct, loanPreview, loanRateFor, savingsInterest } from '../../lib/finance';
+import { nairaFlat, nairaShort, ratePct } from '../../lib/format';
+import { loanPreview } from '../../lib/finance';
 import { useSettings } from '../../state/settings';
 
 /** The app's three onboarding slides, as a landing page. */
@@ -15,7 +16,6 @@ export default function Welcome() {
   const [menu, setMenu] = useState(false);
   const rate = ratePct(s.savings.annualRate * 100);
   const example = loanPreview(s, 200_000, 3);
-  const exampleDays = [30, 90, 365, 730];
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -68,18 +68,15 @@ export default function Welcome() {
       </header>
 
       {/* Hero */}
-      <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-10 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:pt-16">
+      <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pt-14">
         <div className="animate-rise">
-          <p className="eyebrow mb-4 text-gold">Easy money.</p>
-          <h1 className="text-[44px] font-extrabold leading-[1.02] tracking-[-0.04em] sm:text-[60px]">
-            Earn {rate}.
-            <br />
-            <span className="gold-text">Paid upfront.</span>
-          </h1>
+          <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-gold">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> Employee loans · Personal loans · Savings
+          </span>
+          <PromiseHeading className="mt-6 text-[42px] leading-[1.04] sm:text-[60px]" />
           <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-2">
-            Lock any amount from {s.savings.minLockDays} days to {lockPeriodShort(s.savings.maxLockDays)} and we credit your full return the
-            same second the plan starts. Borrow up to {nairaFlat(s.lending.maxAmount)} for your business at a flat rate. Run your Ajo circle
-            without the notebook.
+            Money for the needs that can’t wait for month end, paid straight into your Kudi9ja wallet, with a repayment plan that is clear from
+            day one.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" to="/signup" iconRight={<ArrowRight className="h-5 w-5" />}>
@@ -105,29 +102,17 @@ export default function Welcome() {
           </div>
         </div>
 
-        {/* The upfront-interest card */}
+        {/* The five promises, the same list the sign-in page shows */}
         <div className="relative animate-rise [animation-delay:150ms]">
           <div className="absolute -inset-6 rounded-[40px] bg-gold/10 blur-3xl" />
-          <div className="card-gradient relative overflow-hidden rounded-3xl border border-gold/25 p-7 shadow-pop">
+          <div className="card-gradient relative overflow-hidden rounded-3xl border border-gold/25 p-6 shadow-pop sm:p-8">
             <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gold/20 blur-3xl" />
             <div className="relative">
-              <div className="flex items-center justify-between">
-                <p className="text-[13px] font-semibold text-ink-2">Lock ₦100,000 for a year</p>
+              <div className="mb-7 flex items-center justify-between">
+                <p className="eyebrow text-gold">Why Kudi9ja</p>
                 <BrandMark size={28} />
               </div>
-              <p className="num mt-4 text-[13px] text-ink-3">Paid into your wallet today</p>
-              <p className="num text-[46px] font-extrabold tracking-[-0.035em] gold-text">{naira(savingsInterest(s, 100_000, 365))}</p>
-              <div className="mt-6 space-y-2.5">
-                {exampleDays.map((d) => (
-                  <div key={d} className="flex items-center justify-between rounded-xl bg-surface-alt/50 px-4 py-2.5 text-[13.5px]">
-                    <span className="text-ink-2">{lockPeriodShort(d)}</span>
-                    <span className="num font-bold">
-                      +{naira(savingsInterest(s, 100_000, d))}
-                      <span className="ml-2 text-[11.5px] font-semibold text-success">{ratePct(effectiveYieldPct(s, d))}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <PromiseList />
             </div>
           </div>
         </div>
@@ -137,24 +122,24 @@ export default function Welcome() {
       <section className="relative mx-auto max-w-6xl px-5 pb-20 sm:px-8">
         <div className="grid gap-5 md:grid-cols-3">
           <Product
-            icon={<PiggyBank />}
-            eyebrow="Save"
-            title={`Fixed Savings at ${rate}`}
-            stat={rate}
-            statLabel="per annum, paid instantly"
-            points={['Your whole return lands the day you start', 'Top up whenever you like', 'Principal returns in full at maturity']}
-          />
-          <Product
             icon={<Zap />}
             eyebrow="Borrow"
             title="Credit at your speed"
             stat={nairaShort(s.lending.maxAmount)}
             statLabel="the most we lend"
             points={[
-              `${ratePct(loanRateFor(s, 1) * 100)} flat over 1 month`,
+              'Interest rate as low as 5%',
               `Borrow ₦200,000 → ${nairaFlat(example.net)} in your wallet`,
               'Repay weekly or monthly',
             ]}
+          />
+          <Product
+            icon={<PiggyBank />}
+            eyebrow="Save"
+            title={`Fixed Savings at ${rate}`}
+            stat={rate}
+            statLabel="per annum, paid instantly"
+            points={['Your whole return lands the day you start', 'Top up whenever you like', 'Principal returns in full at maturity']}
           />
           <Product
             icon={<Users />}
