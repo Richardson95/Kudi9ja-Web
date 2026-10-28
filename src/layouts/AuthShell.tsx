@@ -29,7 +29,7 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
           <BrandLogo height={48} to="/" />
           <div className="my-auto max-w-md py-12">
             <h2 className="text-[40px] font-extrabold leading-[1.08] tracking-[-0.035em]">
-              Easy money, <span className="gold-text">when you need it.</span>
+              Easy Money, <span className="gold-text">that resolves your needs!</span>
             </h2>
             <div className="mt-9 space-y-5">
               {pillars.map(({ icon: Icon, title, text }, i) => (
