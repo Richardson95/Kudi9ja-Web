@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, PiggyBank, ShieldCheck, Zap } from 'lucide-react';
+import { BriefcaseBusiness, Lock, UserRound, Wallet } from 'lucide-react';
 import { BrandLogo, BrandMark } from '../components/Brand';
-import { nairaShort, ratePct } from '../lib/format';
+import { nairaShort } from '../lib/format';
 import { useSettings } from '../state/settings';
 
 /**
@@ -13,9 +13,9 @@ import { useSettings } from '../state/settings';
 export function AuthShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
   const s = useSettings();
   const pillars = [
-    { icon: PiggyBank, title: `${ratePct(s.savings.annualRate * 100)} a year, paid upfront`, text: 'Lock any amount and your full return lands in your wallet the moment the plan starts.' },
-    { icon: Zap, title: `Borrow up to ${nairaShort(s.lending.maxAmount)}`, text: 'A flat rate set by the tenure you choose, and a repayment plan you can read at a glance.' },
-    { icon: ShieldCheck, title: 'Two keys on every naira', text: 'A sign-in passcode to get in, and a separate transaction PIN for everything that moves money.' },
+    { icon: BriefcaseBusiness, title: 'Loans for staff, before payday', text: 'Guaranteed loans for employees whose needs can’t wait for the end of the month.' },
+    { icon: UserRound, title: `Personal loans up to ${nairaShort(s.lending.maxAmount)}`, text: 'Borrow in your own name, at a flat rate set by the tenure you choose, and repay monthly or weekly.' },
+    { icon: Wallet, title: 'Straight to your wallet', text: 'Approved loans land in your Kudi9ja wallet, with a repayment plan you can read at a glance.' },
   ];
 
   return (
@@ -28,7 +28,7 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
           <div className="my-auto max-w-md py-12">
             <BrandMark size={64} halo className="mb-8" />
             <h2 className="text-[40px] font-extrabold leading-[1.08] tracking-[-0.035em]">
-              Money that works <span className="gold-text">as hard as you do.</span>
+              Easy money, <span className="gold-text">when you need it.</span>
             </h2>
             <div className="mt-10 space-y-6">
               {pillars.map(({ icon: Icon, title, text }, i) => (
