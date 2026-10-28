@@ -70,8 +70,8 @@ export default function Welcome() {
       {/* Hero */}
       <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pt-14">
         <div className="animate-rise">
-          <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-gold">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> Employee loans · Personal loans · Savings
+          <span className="inline-flex items-center gap-2 rounded-2xl border sm:rounded-full border-gold/30 bg-gold/10 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-gold">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> Employee loans · Personal loans · Business loans · Savings
           </span>
           <PromiseHeading className="mt-6 text-[42px] leading-[1.04] sm:text-[60px]" />
           <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-ink-2">
