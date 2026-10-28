@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Calculator, CheckCircle2, Fingerprint, Landmark, Lock, PiggyBank, ShieldCheck, Users, Zap } from 'lucide-react';
+import { ArrowRight, Calculator, CheckCircle2, Fingerprint, Landmark, Lock, Menu, PiggyBank, ShieldCheck, Users, X, Zap } from 'lucide-react';
 import { BrandLogo, BrandMark } from '../../components/Brand';
 import { usePageTitle } from '../../components/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -12,6 +12,7 @@ import { useSettings } from '../../state/settings';
 export default function Welcome() {
   usePageTitle('');
   const s = useSettings();
+  const [menu, setMenu] = useState(false);
   const rate = ratePct(s.savings.annualRate * 100);
   const example = loanPreview(s, 200_000, 3);
   const exampleDays = [30, 90, 365, 730];
@@ -20,13 +21,41 @@ export default function Welcome() {
     <div className="min-h-screen bg-canvas">
       <div className="night-gradient pointer-events-none fixed inset-0" />
 
-      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
+      <header className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
         <BrandLogo height={40} />
-        <nav className="flex items-center gap-2">
-          <Link to="/legal" className="hidden px-3 py-2 text-[13.5px] font-semibold text-ink-2 hover:text-ink sm:block">
+        {/* Phones: everything sits behind one menu button so the bar doesn't overflow. */}
+        <button
+          type="button"
+          onClick={() => setMenu((m) => !m)}
+          className="grid h-10 w-10 place-items-center rounded-xl border border-stroke bg-surface text-ink-2 transition hover:text-ink md:hidden"
+          aria-label={menu ? 'Close menu' : 'Open menu'}
+          aria-expanded={menu}
+        >
+          {menu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+        {menu && (
+          <div className="absolute inset-x-5 top-full -mt-1 animate-rise rounded-2xl border border-stroke bg-surface p-2 shadow-card md:hidden">
+            <Link to="/legal" className="block rounded-xl px-4 py-3 text-[15px] font-semibold text-ink-2 hover:bg-surface-alt hover:text-ink">
+              How it works
+            </Link>
+            <a href={`mailto:${s.company.supportEmail}`} className="block rounded-xl px-4 py-3 text-[15px] font-semibold text-ink-2 hover:bg-surface-alt hover:text-ink">
+              Contact us
+            </a>
+            <div className="mt-2 grid gap-2 border-t border-stroke p-2 pt-4">
+              <Button variant="ghost" block to="/signin">
+                Sign in
+              </Button>
+              <Button block to="/signup">
+                Open an account
+              </Button>
+            </div>
+          </div>
+        )}
+        <nav className="hidden items-center gap-2 md:flex">
+          <Link to="/legal" className="px-3 py-2 text-[13.5px] font-semibold text-ink-2 hover:text-ink">
             How it works
           </Link>
-          <a href={`mailto:${s.company.supportEmail}`} className="hidden px-3 py-2 text-[13.5px] font-semibold text-ink-2 hover:text-ink sm:block">
+          <a href={`mailto:${s.company.supportEmail}`} className="px-3 py-2 text-[13.5px] font-semibold text-ink-2 hover:text-ink">
             Contact us
           </a>
           <Button variant="ghost" size="sm" to="/signin">
