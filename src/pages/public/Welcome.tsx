@@ -6,7 +6,6 @@ import { PromiseHeading, PromiseList } from '../../components/Promises';
 import { usePageTitle } from '../../components/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { nairaFlat, nairaShort, ratePct } from '../../lib/format';
-import { loanPreview } from '../../lib/finance';
 import { useSettings } from '../../state/settings';
 
 /** The app's three onboarding slides, as a landing page. */
@@ -15,7 +14,6 @@ export default function Welcome() {
   const s = useSettings();
   const [menu, setMenu] = useState(false);
   const rate = ratePct(s.savings.annualRate * 100);
-  const example = loanPreview(s, 200_000, 3);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -129,7 +127,7 @@ export default function Welcome() {
             statLabel="the most we lend"
             points={[
               'Interest rate as low as 5%',
-              `Borrow ₦200,000 → ${nairaFlat(example.net)} in your wallet`,
+              `Borrow ${nairaFlat(s.lending.minAmount)} to ${nairaFlat(s.lending.maxAmount)}`,
               'Repay weekly or monthly',
             ]}
           />
