@@ -72,11 +72,11 @@ export default function Welcome() {
             <span className="h-1.5 w-1.5 rounded-full bg-gold" /> Employee loans · Personal loans · Business loans · Savings
           </span>
           <PromiseHeading className="mt-6 text-[42px] leading-[1.04] sm:text-[60px]" />
-          <p className="mt-6 max-w-xl text-[17.8px] leading-relaxed text-ink">
+          <p className="mt-6 max-w-xl text-[17.6px] leading-relaxed text-ink">
             At Kudi9ja, we provide flexible financing solutions designed to meet your needs, with competitive monthly interest rates that make
             repayment easy and convenient.
           </p>
-          <p className="mt-4 max-w-xl text-[17.8px] leading-relaxed text-ink">
+          <p className="mt-4 max-w-xl text-[17.6px] leading-relaxed text-ink">
             Money for the needs that can’t wait for month end, paid straight into your Kudi9ja wallet, with a repayment plan that is clear from
             day one.
           </p>
