@@ -155,7 +155,7 @@ export default function Welcome() {
         <div className="rounded-3xl border border-stroke bg-surface p-8 sm:p-10">
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <p className="eyebrow text-gold">Honest by design</p>
+              <p className="eyebrow text-gold">Built on trust</p>
               <h2 className="mt-3 text-[30px] font-extrabold leading-tight tracking-[-0.03em]">Paid in by Paystack. Paid out to you alone.</h2>
               <p className="mt-4 leading-relaxed text-ink-2">
                 Add money or repay a loan by card, bank transfer or USSD through Paystack. It reaches your wallet — or comes off what you owe — the
