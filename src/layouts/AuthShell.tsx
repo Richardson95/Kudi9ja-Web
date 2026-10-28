@@ -13,7 +13,7 @@ import { useSettings } from '../state/settings';
 export function AuthShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
   const s = useSettings();
   const pillars = [
-    { icon: BriefcaseBusiness, title: 'Employer-guaranteed staff loans', text: 'Your employer guarantees the loan, so you can get money for what you need before your salary comes in.' },
+    { icon: BriefcaseBusiness, title: 'Employer-Guaranteed Employee Loans', text: 'Your employer guarantees the loan, so you can get money for what you need before your salary comes in.' },
     { icon: UserRound, title: `Personal loans up to ${nairaShort(s.lending.maxAmount)}`, text: 'Borrow in your own name, at a flat rate set by the tenure you choose, and repay monthly or weekly.' },
     { icon: Wallet, title: 'Straight to your wallet', text: 'Approved loans land in your Kudi9ja wallet, with a repayment plan you can read at a glance.' },
     { icon: PiggyBank, title: `${ratePct(s.savings.annualRate * 100)} a year, paid upfront`, text: 'Lock any amount and your full return lands in your wallet the moment the plan starts.' },

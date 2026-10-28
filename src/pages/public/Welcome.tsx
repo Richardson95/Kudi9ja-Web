@@ -26,6 +26,9 @@ export default function Welcome() {
           <Link to="/legal" className="hidden px-3 py-2 text-[13.5px] font-semibold text-ink-2 hover:text-ink sm:block">
             How it works
           </Link>
+          <a href={`mailto:${s.company.supportEmail}`} className="hidden px-3 py-2 text-[13.5px] font-semibold text-ink-2 hover:text-ink sm:block">
+            Contact us
+          </a>
           <Button variant="ghost" size="sm" to="/signin">
             Sign in
           </Button>
