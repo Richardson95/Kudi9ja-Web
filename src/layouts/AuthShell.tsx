@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { BriefcaseBusiness, Lock, UserRound, Wallet } from 'lucide-react';
-import { BrandLogo, BrandMark } from '../components/Brand';
-import { nairaShort } from '../lib/format';
+import { BriefcaseBusiness, Lock, PiggyBank, ShieldCheck, UserRound, Wallet } from 'lucide-react';
+import { BrandLogo } from '../components/Brand';
+import { nairaShort, ratePct } from '../lib/format';
 import { useSettings } from '../state/settings';
 
 /**
  * The split screen every visitor page sits in: the brand and the product's
- * three promises on the left, the form on the right. On a phone the left
+ * promises on the left, the form on the right. On a phone the left
  * panel folds away and the form has the screen.
  */
 export function AuthShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
@@ -16,6 +16,8 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
     { icon: BriefcaseBusiness, title: 'Loans for staff, before payday', text: 'Guaranteed loans for employees whose needs can’t wait for the end of the month.' },
     { icon: UserRound, title: `Personal loans up to ${nairaShort(s.lending.maxAmount)}`, text: 'Borrow in your own name, at a flat rate set by the tenure you choose, and repay monthly or weekly.' },
     { icon: Wallet, title: 'Straight to your wallet', text: 'Approved loans land in your Kudi9ja wallet, with a repayment plan you can read at a glance.' },
+    { icon: PiggyBank, title: `${ratePct(s.savings.annualRate * 100)} a year, paid upfront`, text: 'Lock any amount and your full return lands in your wallet the moment the plan starts.' },
+    { icon: ShieldCheck, title: 'Two keys on every naira', text: 'A sign-in passcode to get in, and a separate transaction PIN for everything that moves money.' },
   ];
 
   return (
@@ -26,11 +28,10 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
         <div className="relative flex flex-1 flex-col px-14 py-12">
           <BrandLogo height={48} to="/" />
           <div className="my-auto max-w-md py-12">
-            <BrandMark size={64} halo className="mb-8" />
             <h2 className="text-[40px] font-extrabold leading-[1.08] tracking-[-0.035em]">
               Easy money, <span className="gold-text">when you need it.</span>
             </h2>
-            <div className="mt-10 space-y-6">
+            <div className="mt-9 space-y-5">
               {pillars.map(({ icon: Icon, title, text }, i) => (
                 <div key={title} className="flex animate-rise gap-4" style={{ animationDelay: `${150 + i * 90}ms` }}>
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-gold/25 bg-gold/10 text-gold">
