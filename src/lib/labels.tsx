@@ -136,7 +136,7 @@ export const instalmentLabel = (s: InstallmentStatus | string) =>
 export const planTone = (s: SavingsStatus): Tone => (s === 'ACTIVE' ? 'gold' : s === 'MATURED' ? 'success' : s === 'BROKEN' ? 'danger' : 'neutral');
 
 export const applicationTone = (s: LoanApplicationStatus): Tone =>
-  s === 'PENDING' ? 'gold' : s === 'APPROVED' ? 'success' : s === 'REJECTED' ? 'danger' : 'neutral';
+  s === 'PENDING' ? 'gold' : s === 'OFFERED' ? 'info' : s === 'APPROVED' ? 'success' : s === 'REJECTED' ? 'danger' : 'neutral';
 
 export const depositTone = (s: DepositStatus): Tone => (s === 'PENDING' ? 'gold' : s === 'CONFIRMED' ? 'success' : 'danger');
 

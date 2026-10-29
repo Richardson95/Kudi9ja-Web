@@ -196,16 +196,18 @@ export function loanPreview(
   months: number,
   frequency: RepaymentFrequency = 'MONTHLY',
   start: Date = new Date(),
+  /** Prices set on this loan by an admin, in place of the settings. */
+  priced?: { flatRate: number; managementFee: number; repaymentFeeRate: number },
 ): LoanPreview {
-  const rate = loanRateFor(s, months);
+  const rate = priced ? priced.flatRate : loanRateFor(s, months);
   const loanTotal = principal > 0 ? ceilNaira(principal * (1 + rate)) : 0;
   const interest = loanTotal - principal;
-  const feeRate = repaymentFeeRate(s);
+  const feeRate = priced ? priced.repaymentFeeRate : repaymentFeeRate(s);
   const count = instalmentCount(frequency, months, start);
   const plan = instalmentPlan(loanTotal, count, feeRate);
   const fees = plan.reduce((sum, p) => sum + p.fee, 0);
   const first = plan[0] ?? { base: 0, fee: 0 };
-  const fee = principal > 0 ? processingFee(s, principal) : 0;
+  const fee = priced ? priced.managementFee : principal > 0 ? processingFee(s, principal) : 0;
   return {
     rate,
     interest: Math.max(interest, 0),

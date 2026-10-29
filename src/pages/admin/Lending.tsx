@@ -62,8 +62,10 @@ function Applications() {
         onChange={setStatus}
         options={[
           { value: 'PENDING', label: 'To decide' },
+          { value: 'OFFERED', label: 'With customer' },
           { value: 'APPROVED', label: 'Approved' },
           { value: 'REJECTED', label: 'Declined' },
+          { value: 'TERMS_DECLINED', label: 'Terms turned down' },
           { value: 'CANCELLED', label: 'Withdrawn' },
           { value: 'ALL', label: 'All' },
         ]}
@@ -85,6 +87,7 @@ function Applications() {
                       {a.purpose} · {a.businessName} · {termPhrase(a.tenureMonths, a.repaymentFrequency)} · sent {relative(a.submittedAt)}
                       {a.reviewedBy ? ` · by ${a.reviewedBy}` : ''}
                     </p>
+                    {a.termsAgreed && a.status === 'PENDING' && <p className="text-[12px] font-bold text-success">Customer agreed to changed terms</p>}
                   </div>
                   <p className="num font-extrabold">{naira(a.amount)}</p>
                   <Pill tone={applicationTone(a.status)}>{a.statusLabel}</Pill>

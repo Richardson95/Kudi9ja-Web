@@ -338,6 +338,8 @@ export const loansApi = {
   },
   applications: () => http.get<LoanApplication[]>('/loans/applications'),
   withdrawApplication: (id: string) => http.post<LoanApplication>(`/loans/applications/${id}/withdraw`),
+  agreeToTerms: (id: string, pin: string) => http.post<LoanApplication>(`/loans/applications/${id}/agree`, { pin }),
+  turnDownTerms: (id: string) => http.post<LoanApplication>(`/loans/applications/${id}/turn-down`),
   repay: (id: string, amount: number, pin: string) =>
     http.post<RepaymentResponse>(`/loans/${id}/repay`, { amount, pin }, { idempotencyKey: newIdempotencyKey() }),
   settle: (id: string, pin: string) =>
@@ -527,6 +529,11 @@ export const adminApi = {
   loanApplication: (id: string) => http.get<AdminApplicationDetail>(`/admin/loan-applications/${id}`),
   approveApplication: (id: string, note?: string) =>
     http.post<AdminApplicationDetail>(`/admin/loan-applications/${id}/approve`, note ? { note } : {}),
+  /** Rates are percentages, as typed: 30 for 30%. */
+  offerApplicationTerms: (
+    id: string,
+    terms: { months: number; interestRatePct: number; managementFee: number; transactionFeePct: number; note?: string },
+  ) => http.post<AdminApplicationDetail>(`/admin/loan-applications/${id}/offer`, terms),
   rejectApplication: (id: string, reason: string) =>
     http.post<AdminApplicationDetail>(`/admin/loan-applications/${id}/reject`, { reason }),
 

@@ -34,7 +34,7 @@ export type SavingsStatus = 'ACTIVE' | 'MATURED' | 'WITHDRAWN' | 'BROKEN' | 'REL
 export type AutoFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 export type LoanStatus = 'PENDING' | 'ACTIVE' | 'REPAID' | 'OVERDUE' | 'REJECTED' | 'CANCELLED' | 'WRITTEN_OFF';
 export type InstallmentStatus = 'PAID' | 'PARTIAL' | 'UPCOMING' | 'OVERDUE';
-export type LoanApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type LoanApplicationStatus = 'PENDING' | 'OFFERED' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'TERMS_DECLINED';
 export type DepositPurpose = 'WALLET' | 'LOAN_REPAYMENT';
 export type DepositStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
 export type WithdrawalStatus = 'PENDING' | 'APPROVED' | 'DECLINED';
@@ -468,6 +468,21 @@ export interface ApplicationDocument {
   url: string;
 }
 
+/** Terms the reviewing admin changed, as a whole set. */
+export interface TermsOffer {
+  months: number;
+  /** Flat interest for the whole loan, as a fraction: 0.3 for 30%. */
+  flatRate: number;
+  managementFee: Naira;
+  /** On each repayment, as a fraction of the instalment: 0.02 for 2%. */
+  repaymentFeeRate: number;
+  note?: string;
+  offeredAt: ISODate;
+  offeredBy?: string;
+  /** When the customer agreed; absent while they have not. */
+  agreedAt?: ISODate;
+}
+
 export interface LoanApplication {
   id: string;
   amount: Naira;
@@ -485,6 +500,7 @@ export interface LoanApplication {
   reviewedAt?: ISODate;
   rejectionReason?: string;
   loanId?: string;
+  offer?: TermsOffer;
 }
 
 export interface AdminApplicationRow {
@@ -502,6 +518,8 @@ export interface AdminApplicationRow {
   submittedAt: ISODate;
   reviewedAt?: ISODate;
   reviewedBy?: string;
+  termsChanged: boolean;
+  termsAgreed: boolean;
 }
 
 export interface AdminApplicationDetail extends AdminApplicationRow {
@@ -516,6 +534,7 @@ export interface AdminApplicationDetail extends AdminApplicationRow {
   loanId?: string;
   /** True when the applicant borrows on the loan-group terms. */
   groupPricing: boolean;
+  offer?: TermsOffer;
 }
 
 // ── Thrift ──────────────────────────────────────────────────────────────────

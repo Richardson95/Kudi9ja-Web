@@ -8,13 +8,13 @@ import { Skeleton } from '../../../components/ui/Spinner';
 import { useAction } from '../../../hooks/useAction';
 import { useApplications, useEligibility, useLoans, useRefresh } from '../../../hooks/queries';
 import { loansApi, officersApi } from '../../../lib/api/endpoints';
-import { frequencyWord, loanRateRange, termPhrase } from '../../../lib/finance';
+import { eachInstalment, frequencyWord, instalmentsPhrase, loanPreview, loanRateRange, termPhrase } from '../../../lib/finance';
 import { asDay, naira } from '../../../lib/format';
 import { applicationTone, isLoanOpen, loanTone } from '../../../lib/labels';
 import { useDialogs } from '../../../components/ui/Dialogs';
 import { useSession } from '../../../state/session';
 import { useSettings } from '../../../state/settings';
-import type { Loan } from '../../../types/api';
+import type { Eligibility, Loan, LoanApplication, PublicSettings } from '../../../types/api';
 
 export default function Loans() {
   const s = useSettings();
@@ -31,6 +31,7 @@ export default function Loans() {
   const closed = all.filter((l) => !isLoanOpen(l.status));
   const owed = open.reduce((sum, l) => sum + l.outstanding, 0);
   const pending = (applications.data ?? []).filter((a) => a.status === 'PENDING');
+  const offered = (applications.data ?? []).filter((a) => a.status === 'OFFERED');
   const e = eligibility.data;
 
   return (
@@ -65,6 +66,10 @@ export default function Loans() {
         <StatTile className="col-span-2 lg:col-span-1" label="Under review" value={String(pending.length)} icon={<FileClock />} tone="info" footnote="Applications" />
       </div>
 
+      {offered.map((a) => (
+        <TermsToAnswer key={a.id} a={a} s={s} e={e} />
+      ))}
+
       {(officers.data?.length ?? 0) > 0 && (
         <Card>
           <SectionHeader title={officers.data!.length > 1 ? 'Your loan officers' : 'Your loan officer'} />
@@ -94,7 +99,7 @@ export default function Loans() {
         </Card>
       )}
 
-      {pending.length > 0 && (
+      {pending.length + offered.length > 0 && (
         <section>
           <SectionHeader title="Applications" />
           <Card padded={false}>
@@ -206,6 +211,92 @@ function LoanCard({ loan: l }: { loan: Loan }) {
       <p className="mt-1.5 text-[11.5px] text-ink-3">
         {l.installmentsPaid} of {l.installmentCount} {frequencyWord(l.repaymentFrequency)} instalments paid
       </p>
+    </Card>
+  );
+}
+
+/**
+ * Terms the team changed on an application, side by side with what was asked
+ * for. Agreeing sends it back to them to approve; turning them down ends it.
+ */
+function TermsToAnswer({ a, s, e }: { a: LoanApplication; s: PublicSettings; e?: Eligibility }) {
+  const dialogs = useDialogs();
+  const refresh = useRefresh();
+  const { busy, run } = useAction();
+  const offer = a.offer!;
+  const terms = e?.groupPricing ? { ...s, lending: s.groupLending } : s;
+  const before = loanPreview(terms, a.amount, a.tenureMonths, a.repaymentFrequency);
+  const after = loanPreview(terms, a.amount, offer.months, a.repaymentFrequency, undefined, offer);
+  const pct = (f: number) => `${Math.round(f * 10000) / 100}%`;
+  const rows: [string, string, string][] = [
+    ['Length', instalmentsPhrase(a.repaymentFrequency, a.tenureMonths), instalmentsPhrase(a.repaymentFrequency, offer.months)],
+    ['Interest (flat)', pct(before.rate), pct(after.rate)],
+    ['Management fee', naira(before.fee), naira(after.fee)],
+    ['Transaction fee on each repayment', pct(before.feeRate), pct(after.feeRate)],
+    [eachInstalment(a.repaymentFrequency), naira(before.each), naira(after.each)],
+    ['Total to repay', naira(before.total), naira(after.total)],
+    ['Paid into your wallet', naira(before.net), naira(after.net)],
+  ];
+
+  const agree = async () => {
+    const pin = await dialogs.pin({
+      title: 'Agree to the new terms',
+      amountLabel: 'You would receive',
+      amount: after.net,
+      details: [
+        ['Repay', `${naira(after.each)} ${frequencyWord(a.repaymentFrequency)}`],
+        ['Total', naira(after.total)],
+      ],
+    });
+    if (pin) await run(async () => {
+      await loansApi.agreeToTerms(a.id, pin);
+      await refresh.loans();
+    }, 'Agreed — it is back with our team for approval');
+  };
+  const turnDown = async () => {
+    const ok = await dialogs.confirm({
+      title: 'Reject the new terms?',
+      message: 'This closes the application and nothing is lent. You can apply again later.',
+      confirmLabel: 'Reject',
+      danger: true,
+    });
+    if (ok) await run(async () => {
+      await loansApi.turnDownTerms(a.id);
+      await refresh.loans();
+    }, 'Terms rejected. The application is closed');
+  };
+
+  return (
+    <Card className="border-info/40">
+      <SectionHeader title={`New terms for your ${naira(a.amount)} application`} />
+      <p className="mb-3 text-[13px] text-ink-2">
+        Our team reviewed your application and can offer it on the terms below. Nothing is lent until you agree.
+      </p>
+      {offer.note && <Notice tone="info" className="mb-3">{offer.note}</Notice>}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[420px] text-left text-sm">
+          <thead className="text-[12px] uppercase tracking-wide text-ink-3">
+            <tr>
+              <th className="py-2 pr-3 font-semibold" />
+              <th className="py-2 pr-3 font-semibold">You asked for</th>
+              <th className="py-2 font-semibold">New terms</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stroke">
+            {rows.map(([label, was, now]) => (
+              <tr key={label}>
+                <td className="py-2 pr-3 text-ink-3">{label}</td>
+                <td className="num py-2 pr-3">{was}</td>
+                <td className={`num py-2 font-bold ${was !== now ? 'text-gold' : ''}`}>{now}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <Button variant="danger" disabled={busy} onClick={() => void turnDown()}>Reject</Button>
+        <Button variant="success" loading={busy} onClick={() => void agree()}>Agree</Button>
+      </div>
     </Card>
   );
 }
