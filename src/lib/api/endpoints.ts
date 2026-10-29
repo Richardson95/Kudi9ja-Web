@@ -490,6 +490,8 @@ export const adminApi = {
     http.get<PageResponse<AdminWithdrawal>>(`/admin/customers/${id}/withdrawals`, { size: 50 }),
   customerPlans: (id: string) => http.get<Plan[]>(`/admin/customers/${id}/plans`),
   customerLoans: (id: string) => http.get<Loan[]>(`/admin/customers/${id}/loans`),
+  /** The full BVN and NIN; the server logs every call as a data access. */
+  customerIdentityNumbers: (id: string) => http.get<{ bvn?: string; nin?: string }>(`/admin/customers/${id}/identity-numbers`),
   customerSignatures: (id: string) => http.get<SignatureRecord[]>(`/admin/customers/${id}/signatures`),
   customerLoanRecords: (id: string) => http.get<CustomerLoanRecords>(`/admin/customers/${id}/loan-records`),
   paystackPayments: (status?: PaystackStatus, page = 0, size = 50, customerId?: string) =>

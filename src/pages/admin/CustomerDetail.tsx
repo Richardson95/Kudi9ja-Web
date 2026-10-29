@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Flag, MessagesSquare, Plus, ReceiptText, ShieldCheck, Snowflake, Trash2, Undo2, UserRound } from 'lucide-react';
+import { Ban, Eye, EyeOff, Flag, MessagesSquare, Plus, ReceiptText, ShieldCheck, Snowflake, Trash2, Undo2, UserRound } from 'lucide-react';
 import { DocumentGrid, type DocItem } from '../../components/admin/Documents';
 import { OfficersPanel } from '../../components/admin/OfficersPanel';
 import { RecordRepayment } from '../../components/admin/RecordRepayment';
@@ -39,6 +39,15 @@ export default function CustomerDetail() {
   const dialogs = useDialogs();
   const qc = useQueryClient();
   const { busy, run } = useAction();
+  const reveal = useAction();
+  const revealing = reveal.busy;
+  const [ids, setIds] = useState<{ bvn?: string; nin?: string } | null>(null);
+  const revealIds = async () => {
+    if (ids) return true;
+    const numbers = await reveal.run(() => adminApi.customerIdentityNumbers(id));
+    if (numbers) setIds(numbers);
+    return !!numbers;
+  };
 
   if (customer.isLoading) return <PageSpinner />;
   const c = customer.data;
@@ -143,8 +152,8 @@ export default function CustomerDetail() {
                 ['Full name', c.fullName],
                 ['Date of birth', c.dateOfBirth ? asDay(c.dateOfBirth) : '—'],
                 ['Gender', c.gender ?? '—'],
-                ['BVN', maskLast4(c.bvnLast4)],
-                ['NIN', maskLast4(c.ninLast4)],
+                ['BVN', <IdentityNumber label="BVN" masked={c.bvnLast4} full={ids?.bvn} busy={revealing} onReveal={revealIds} />],
+                ['NIN', <IdentityNumber label="NIN" masked={c.ninLast4} full={ids?.nin} busy={revealing} onReveal={revealIds} />],
                 ['Email', c.email ? `${c.email}${c.emailVerified ? ' ✓' : ''}` : 'None yet'],
                 ['Phone', `${c.phone}${c.phoneVerified ? ' ✓' : ''}`],
                 ['Address', c.address ?? '—'],
@@ -175,6 +184,44 @@ export default function CustomerDetail() {
       {tab === 'documents' && <DocumentsTab id={id} />}
       {tab === 'support' && <SupportTab id={id} />}
     </div>
+  );
+}
+
+/**
+ * A BVN or NIN, masked until an admin taps Show. The full numbers come from a
+ * separate call that the server writes to the audit log; the page keeps them
+ * in memory only, shared by both rows, so one tap is one logged reveal.
+ */
+function IdentityNumber({
+  masked,
+  full,
+  label,
+  busy,
+  onReveal,
+}: {
+  masked?: string;
+  full?: string;
+  label: string;
+  busy: boolean;
+  onReveal: () => Promise<boolean>;
+}) {
+  const [shown, setShown] = useState(false);
+  if (!masked) return <>{maskLast4(masked)}</>;
+  const value = shown && full;
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="font-mono tracking-wide">{value || maskLast4(masked)}</span>
+      <button
+        type="button"
+        onClick={async () => setShown(value ? false : await onReveal())}
+        disabled={busy}
+        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-bold text-gold hover:bg-gold/10 disabled:opacity-50"
+        aria-label={value ? `Hide ${label}` : `Show full ${label}`}
+      >
+        {value ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        {value ? 'Hide' : 'Show'}
+      </button>
+    </span>
   );
 }
 
