@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import { Spinner } from './Spinner';
 
 type Variant = 'gold' | 'ghost' | 'outline' | 'danger' | 'subtle' | 'success';
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg' | 'hero';
 
 const variants: Record<Variant, string> = {
   gold: 'gold-gradient text-on-gold shadow-gold hover:brightness-[1.06] active:brightness-95',
@@ -19,6 +19,8 @@ const sizes: Record<Size, string> = {
   sm: 'h-9 px-3.5 text-[13px] rounded-xl gap-1.5',
   md: 'h-11 px-5 text-sm rounded-xl gap-2',
   lg: 'h-[52px] px-6 text-[15px] rounded-2xl gap-2.5',
+  // Small enough on a phone for two to sit side by side; large from tablet width up.
+  hero: 'h-11 px-3 text-[clamp(11.5px,3.4vw,13.5px)] rounded-xl gap-1.5 sm:h-[52px] sm:px-6 sm:text-[15px] sm:rounded-2xl sm:gap-2.5',
 };
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {

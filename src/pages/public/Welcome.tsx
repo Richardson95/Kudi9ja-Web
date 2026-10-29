@@ -68,9 +68,13 @@ export default function Welcome() {
       {/* Hero */}
       <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pt-14">
         <div className="animate-rise">
-          <span className="inline-flex items-center gap-2 rounded-2xl border sm:rounded-full border-gold/30 bg-gold/10 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-gold">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> Employee loans · Personal loans · Business loans · Savings
-          </span>
+          <ul className="grid w-fit grid-cols-2 gap-x-4 gap-y-1.5 rounded-2xl border border-gold/30 bg-gold/10 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-gold sm:flex sm:rounded-full sm:py-1.5 sm:text-[12px] sm:tracking-[0.14em]">
+            {['Employee loans', 'Personal loans', 'Business loans', 'Savings'].map((label) => (
+              <li key={label} className="flex items-center gap-2 whitespace-nowrap">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" /> {label}
+              </li>
+            ))}
+          </ul>
           <PromiseHeading className="mt-6 text-[42px] leading-[1.04] sm:text-[60px]" />
           <p className="mt-6 max-w-xl text-[17.6px] leading-relaxed text-ink">
             At Kudi9ja, we provide flexible financing solutions designed to meet your needs, with competitive monthly interest rates that make
@@ -80,11 +84,11 @@ export default function Welcome() {
             Money for the needs that can’t wait for month end, paid straight into your Kudi9ja wallet, with a repayment plan that is clear from
             day one.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" to="/signup" iconRight={<ArrowRight className="h-5 w-5" />}>
+          <div className="mt-8 flex gap-2 sm:gap-3">
+            <Button size="hero" to="/signup" iconRight={<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />}>
               Get started
             </Button>
-            <Button size="lg" variant="ghost" to="/signin">
+            <Button size="hero" variant="ghost" to="/signin">
               I already have an account
             </Button>
           </div>
