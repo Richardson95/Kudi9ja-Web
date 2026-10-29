@@ -64,6 +64,20 @@ function Withdrawals() {
       await refresh.admin();
     }, 'Approved — Paystack is sending it');
   };
+  const paidByHand = async (w: AdminWithdrawal) => {
+    const reference = await dialogs.reason({
+      title: `Already paid ${w.customerName}?`,
+      message: `Use this only if ${naira(w.amount)} was already transferred to ${w.bank} ${w.destinationAccount} by hand. It is recorded as paid and Paystack sends nothing.`,
+      placeholder: 'Bank transfer reference',
+      confirmLabel: 'Record as paid',
+      minLength: 3,
+      maxLength: 120,
+    });
+    if (reference) await run(async () => {
+      await adminApi.approveWithdrawal(w.id, reference.trim(), undefined, true);
+      await refresh.admin();
+    }, 'Recorded as paid by hand');
+  };
   const decline = async (w: AdminWithdrawal) => {
     const reason = await dialogs.reason({
       title: 'Decline this withdrawal',
@@ -125,6 +139,9 @@ function Withdrawals() {
                     <div className="flex gap-2">
                       <Button size="sm" variant="success" loading={busy} icon={<Check className="h-4 w-4" />} onClick={() => void approve(w)}>
                         Approve
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={busy} icon={<ReceiptText className="h-4 w-4" />} onClick={() => void paidByHand(w)}>
+                        Paid by hand
                       </Button>
                       <Button size="sm" variant="danger" disabled={busy} icon={<X className="h-4 w-4" />} onClick={() => void decline(w)}>
                         Decline

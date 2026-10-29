@@ -513,10 +513,10 @@ export const adminApi = {
       size,
       query,
     }),
-  approveWithdrawal: (id: string, payoutReference?: string, note?: string) =>
+  approveWithdrawal: (id: string, payoutReference?: string, note?: string, paidByHand?: boolean) =>
     http.post<AdminWithdrawal>(
       `/admin/withdrawals/${id}/approve`,
-      { ...(payoutReference ? { payoutReference } : {}), ...(note ? { note } : {}) },
+      { ...(payoutReference ? { payoutReference } : {}), ...(note ? { note } : {}), ...(paidByHand ? { paidByHand } : {}) },
       { idempotencyKey: newIdempotencyKey() },
     ),
   declineWithdrawal: (id: string, reason: string) =>
