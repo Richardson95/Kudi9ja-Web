@@ -74,8 +74,8 @@ export default function Loans() {
         <Card>
           <SectionHeader title={officers.data!.length > 1 ? 'Your loan officers' : 'Your loan officer'} />
           <div className="grid gap-3 sm:grid-cols-2">
-            {officers.data!.map((o) => (
-              <div key={o.email} className="flex items-center gap-3 rounded-xl border border-stroke p-3">
+            {officers.data!.map((o, i) => (
+              <div key={`${o.name}-${i}`} className="flex items-center gap-3 rounded-xl border border-stroke p-3">
                 <IconBadge size={40}>
                   <ShieldCheck />
                 </IconBadge>
@@ -83,15 +83,7 @@ export default function Loans() {
                   <p className="truncate text-sm font-bold">
                     {o.name} {o.lead && <Pill className="ml-1">Lead</Pill>}
                   </p>
-                  <p className="truncate text-[12.5px] text-ink-3">
-                    <a href={`mailto:${o.email}`} className="hover:text-gold">{o.email}</a>
-                    {o.phone && (
-                      <>
-                        {' · '}
-                        <a href={`tel:${o.phone}`} className="hover:text-gold">{o.phone}</a>
-                      </>
-                    )}
-                  </p>
+                  <p className="text-[12.5px] text-ink-3">Looks after your loans</p>
                 </div>
               </div>
             ))}

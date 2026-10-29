@@ -1326,8 +1326,6 @@ export interface AssignedOfficer {
 
 export interface MyOfficer {
   name: string;
-  email: string;
-  phone?: string;
   lead: boolean;
 }
 
