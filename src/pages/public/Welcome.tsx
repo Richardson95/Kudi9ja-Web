@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Calculator, CheckCircle2, Fingerprint, Landmark, Lock, Menu, PiggyBank, ShieldCheck, Users, X, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FileText, Fingerprint, Landmark, Lock, Menu, PiggyBank, ShieldCheck, Users, X, Zap } from 'lucide-react';
 import { BrandLogo, BrandMark } from '../../components/Brand';
 import { PromiseHeading, PromiseList } from '../../components/Promises';
 import { usePageTitle } from '../../components/PageHeader';
@@ -126,7 +126,7 @@ export default function Welcome() {
 
       {/* Three products */}
       <section className="relative mx-auto max-w-6xl px-5 pb-20 sm:px-8">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <Product
             icon={<Zap />}
             eyebrow="Borrow"
@@ -148,6 +148,7 @@ export default function Welcome() {
             points={['Your whole return lands the day you start', 'Top up whenever you like', 'Principal returns in full at maturity']}
           />
           <Product
+            className="sm:col-span-2 lg:col-span-1"
             icon={<Users />}
             eyebrow="Ajo circles"
             title="Ajo, done properly"
@@ -160,11 +161,11 @@ export default function Welcome() {
 
       {/* How money moves */}
       <section className="relative mx-auto max-w-6xl px-5 pb-24 sm:px-8">
-        <div className="rounded-3xl border border-stroke bg-surface p-8 sm:p-10">
+        <div className="rounded-3xl border border-stroke bg-surface p-5 sm:p-8 lg:p-10">
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
               <p className="eyebrow text-gold">Built on trust</p>
-              <h2 className="mt-3 text-[30px] font-extrabold leading-tight tracking-[-0.03em]">Paid in by Paystack. Paid out to you alone.</h2>
+              <h2 className="mt-3 text-[26px] font-extrabold leading-tight tracking-[-0.03em] sm:text-[30px]">Paid in by Paystack. Paid out to you alone.</h2>
               <p className="mt-4 leading-relaxed text-ink-2">
                 Add money or repay a loan by card, bank transfer or USSD through Paystack. It reaches your wallet — or comes off what you owe — the
                 moment Paystack confirms it, with no receipt to upload and nothing to wait for. Withdrawals go only to a bank account in your own name.
@@ -192,12 +193,12 @@ export default function Welcome() {
           </div>
         </div>
         <div className="mt-10 flex flex-col items-center gap-4 text-center">
-          <h2 className="text-[28px] font-extrabold tracking-[-0.03em]">Ready when you are.</h2>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button size="lg" to="/signup" iconRight={<ArrowRight className="h-5 w-5" />}>
+          <h2 className="text-[26px] font-extrabold tracking-[-0.03em] sm:text-[28px]">Ready when you are.</h2>
+          <div className="flex justify-center gap-2 sm:gap-3">
+            <Button size="hero" to="/signup" iconRight={<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />}>
               Open my account
             </Button>
-            <Button size="lg" variant="ghost" to="/legal" icon={<Calculator className="h-5 w-5" />}>
+            <Button size="hero" variant="ghost" to="/legal" icon={<FileText className="h-4 w-4 sm:h-5 sm:w-5" />}>
               Read the terms first
             </Button>
           </div>
@@ -205,11 +206,11 @@ export default function Welcome() {
       </section>
 
       <footer className="relative border-t border-stroke">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-[12.5px] text-ink-3 sm:px-8">
-          <p>
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-8 text-[12.5px] text-ink-3 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+          <p className="max-w-xl leading-relaxed lg:max-w-none">
             © {new Date().getFullYear()} {s.company.legalName} · {s.company.rcNumber}. Kudi9ja is a product of {s.company.legalName}.
           </p>
-          <div className="flex gap-5">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 whitespace-nowrap">
             <Link to="/legal/terms" className="hover:text-gold">Terms</Link>
             <Link to="/legal/privacy" className="hover:text-gold">Privacy</Link>
             <Link to="/legal/lending" className="hover:text-gold">Lending Agreement</Link>
@@ -222,6 +223,7 @@ export default function Welcome() {
 }
 
 function Product({
+  className,
   icon,
   eyebrow,
   title,
@@ -229,6 +231,7 @@ function Product({
   statLabel,
   points,
 }: {
+  className?: string;
   icon: ReactNode;
   eyebrow: string;
   title: string;
@@ -237,7 +240,7 @@ function Product({
   points: string[];
 }) {
   return (
-    <div className="group rounded-3xl border border-stroke bg-surface p-7 transition hover:-translate-y-1 hover:border-gold/35">
+    <div className={`group rounded-3xl border border-stroke bg-surface p-6 transition hover:-translate-y-1 hover:border-gold/35 sm:p-7 ${className ?? ''}`}>
       <span className="grid h-12 w-12 place-items-center rounded-2xl border border-gold/25 bg-gold/10 text-gold [&>svg]:h-6 [&>svg]:w-6">{icon}</span>
       <p className="eyebrow mt-6 text-gold">{eyebrow}</p>
       <h3 className="mt-1.5 text-xl font-extrabold tracking-[-0.02em]">{title}</h3>
