@@ -373,18 +373,7 @@ function Hero() {
 
       <div className="dark relative mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 pb-28 pt-32 text-ink sm:px-8 lg:pt-36">
         <div className="max-w-2xl">
-          <ul className="grid w-fit animate-rise grid-cols-2 gap-x-4 gap-y-1.5 rounded-2xl border border-gold/30 bg-black/30 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-gold backdrop-blur-md sm:flex sm:rounded-full sm:py-1.5 sm:text-[12px] sm:tracking-[0.14em]">
-            {PRODUCT_LINES.map((label) => (
-              <li key={label} className="flex items-center gap-2 whitespace-nowrap">
-                <span className="relative flex h-1.5 w-1.5 shrink-0">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-gold opacity-60" />
-                  <span className="relative h-1.5 w-1.5 rounded-full bg-gold" />
-                </span>
-                {label}
-              </li>
-            ))}
-          </ul>
-          <PromiseHeading className="mt-6 animate-rise text-[42px] leading-[1.04] [animation-delay:120ms] sm:text-[64px] lg:text-[72px]" />
+          <PromiseHeading className="animate-rise text-[42px] leading-[1.04] [animation-delay:120ms] sm:text-[64px] lg:text-[72px]" />
           <p className="mt-6 max-w-xl animate-rise text-[17.6px] leading-relaxed text-white/90 [animation-delay:240ms]">
             At Kudi9ja, we provide flexible financing solutions designed to meet your needs, with competitive monthly interest rates that make
             repayment easy and convenient.

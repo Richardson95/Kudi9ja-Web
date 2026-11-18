@@ -17,13 +17,13 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
     <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
       {/* Always dark, so the white text reads over the photo in either theme. */}
       <aside className="dark relative hidden overflow-hidden border-r border-stroke bg-canvas text-ink lg:flex lg:flex-col">
-        {/* Photo: Praise Judah on Unsplash (Unsplash License), unsplash.com/photos/OKoVQRv0444.
-            It fills the right two-thirds and feathers into the dark behind the text. */}
+        {/* Photo: Etty Fidele on Unsplash (Unsplash License), unsplash.com/photos/AzVexpHvuKY.
+            It fills the right side and feathers into the dark behind the text. */}
         <img
           src="/brand/signin-hero.jpg"
           alt=""
           aria-hidden
-          className="absolute inset-y-0 right-0 h-full w-[65%] object-cover object-[50%_25%] [mask-image:linear-gradient(90deg,transparent,black_45%)]"
+          className="absolute inset-y-0 right-0 h-full w-[58%] object-cover object-[0%_25%] [mask-image:linear-gradient(90deg,transparent,black_35%)]"
           onError={(e) => (e.currentTarget.style.display = 'none')}
         />
         {/* Darkens the photo most where the text sits (left), lets it show on the right. */}
