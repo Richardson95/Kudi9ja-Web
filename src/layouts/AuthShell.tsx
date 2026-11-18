@@ -15,7 +15,19 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
 
   return (
     <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-      <aside className="relative hidden overflow-hidden border-r border-stroke lg:flex lg:flex-col">
+      {/* Always dark, so the white text reads over the photo in either theme. */}
+      <aside className="dark relative hidden overflow-hidden border-r border-stroke bg-canvas text-ink lg:flex lg:flex-col">
+        {/* Photo: Ali Mkumbwa on Unsplash (Unsplash License), unsplash.com/photos/5dFuO02OHh0 */}
+        <img
+          src="/brand/signin-hero.jpg"
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover object-left"
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+        {/* Darkens the photo most where the text sits (left), lets it show on the right. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-canvas/95 from-10% via-canvas/80 via-45% to-canvas/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-canvas/90 via-transparent to-canvas/60" />
         <div className="night-gradient absolute inset-0" />
         <div className="absolute -left-32 top-1/3 h-[520px] w-[520px] rounded-full bg-gold/10 blur-[120px]" />
         <div className="relative flex flex-1 flex-col px-14 py-12">
