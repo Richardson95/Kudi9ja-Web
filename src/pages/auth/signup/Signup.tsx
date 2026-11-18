@@ -61,7 +61,15 @@ export default function Signup() {
   const props = { draft, update, next, restart };
 
   return (
-    <div className="night-gradient min-h-screen bg-canvas">
+    <div className="relative isolate min-h-screen bg-canvas">
+      {/* Background photo (Vitaly Gariev on Unsplash, Unsplash License), held still behind the steps.
+          Dimmed hard through the middle where the form sits, lighter at the edges. */}
+      <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden>
+        <img src="/brand/signup-bg.jpg" alt="" className="h-full w-full object-cover object-[60%_40%]" />
+        <div className="absolute inset-0 bg-canvas/75" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_45%,rgb(var(--canvas)/0.85),transparent)]" />
+        <div className="night-gradient absolute inset-0" />
+      </div>
       <header className="sticky top-0 z-20 border-b border-stroke/60 bg-canvas/85 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
           <div className="flex items-center gap-4">
@@ -94,7 +102,7 @@ export default function Signup() {
 
       <div className="mx-auto grid max-w-5xl gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <ol className="sticky top-32 space-y-1">
+          <ol className="sticky top-32 space-y-1 rounded-2xl border border-stroke/60 bg-canvas/60 p-2 backdrop-blur-xl">
             {STEP_TITLES.map((t, i) => (
               <li key={t} className={cn('flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-semibold', i === step ? 'bg-gold/10 text-gold' : i < step ? 'text-ink-2' : 'text-ink-3')}>
                 <span
@@ -111,7 +119,10 @@ export default function Signup() {
           </ol>
         </aside>
 
-        <main key={step} className="min-w-0 animate-rise">
+        <main
+          key={step}
+          className="min-w-0 animate-rise sm:rounded-3xl sm:border sm:border-stroke/70 sm:bg-canvas/70 sm:p-8 sm:shadow-pop sm:backdrop-blur-xl"
+        >
           {step === 0 && <PersonalStep {...props} />}
           {step === 1 && <EmailStep {...props} />}
           {step === 2 && <IdentityStep {...props} />}
