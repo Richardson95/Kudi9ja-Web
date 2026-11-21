@@ -23,10 +23,18 @@ interface RequestOptions {
   authenticated?: boolean;
   /** Multipart instead of JSON. */
   form?: FormData;
+  /** Overrides TIMEOUT_MS. */
+  timeoutMs?: number;
 }
 
 /** Generous: the free hosting tier sleeps, and the first request after idle can take most of a minute. */
 const TIMEOUT_MS = 60_000;
+/**
+ * Files on mobile data. A loan application is several megabytes; at the
+ * 20–100 KB/s a phone often gets, a minute cancelled it part-way and the
+ * re-send started from zero, so it could never finish.
+ */
+const UPLOAD_TIMEOUT_MS = 300_000;
 const RETRY_PAUSE_MS = 3_000;
 
 let refreshing: Promise<boolean> | null = null;
@@ -68,7 +76,7 @@ function headers(opts: RequestOptions): Headers {
 
 async function attempt(method: string, path: string, opts: RequestOptions): Promise<Response> {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = window.setTimeout(() => controller.abort(), opts.timeoutMs ?? TIMEOUT_MS);
   try {
     return await fetch(url(path, opts.query), {
       method,
@@ -94,12 +102,16 @@ const pause = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
  * every money-moving request carries an idempotency key, so a retry of one
  * that did arrive returns the original result instead of moving money twice.
  */
-async function withRetry(run: () => Promise<Response>): Promise<Response> {
+async function withRetry(run: () => Promise<Response>, retryAfterTimeout = true): Promise<Response> {
   try {
     const response = await run();
     if (!serverNotReady(response)) return response;
-  } catch {
-    // timeout or network error — fall through to one more try
+  } catch (error) {
+    // An upload that ran out of time would only run out of time again.
+    if (!retryAfterTimeout && error instanceof DOMException && error.name === 'AbortError') {
+      throw ApiError.offline('timeout');
+    }
+    // otherwise — fall through to one more try
   }
   await pause(RETRY_PAUSE_MS);
   try {
@@ -165,7 +177,8 @@ async function send<T>(method: string, path: string, opts: RequestOptions = {}):
   const authenticated = opts.authenticated !== false;
   if (authenticated && tokens.hasSession && tokens.isAccessExpired) await refreshSession();
 
-  const response = await withRetry(() => attempt(method, path, opts));
+  const retryAfterTimeout = !opts.form;
+  const response = await withRetry(() => attempt(method, path, opts), retryAfterTimeout);
   if (response.status !== 401 || !authenticated) return decode<T>(response);
 
   // A 401 on a request we thought was authenticated: refresh once and retry.
@@ -179,7 +192,7 @@ async function send<T>(method: string, path: string, opts: RequestOptions = {}):
   if (!tokens.hasSession || !error.isAuthFailure) throw error;
   const refreshed = await refreshSession();
   if (!refreshed) throw error;
-  return decode<T>(await withRetry(() => attempt(method, path, opts)));
+  return decode<T>(await withRetry(() => attempt(method, path, opts), retryAfterTimeout));
 }
 
 export const http = {
@@ -192,7 +205,7 @@ export const http = {
     send<T>('PATCH', path, { ...extra, body }),
   delete: <T>(path: string, body?: unknown) => send<T>('DELETE', path, { body }),
   upload: <T>(path: string, form: FormData, idempotencyKey?: string) =>
-    send<T>('POST', path, { form, idempotencyKey }),
+    send<T>('POST', path, { form, idempotencyKey, timeoutMs: UPLOAD_TIMEOUT_MS }),
 
   /**
    * Holds a server-sent event stream open and calls `onEvent` for each event.
