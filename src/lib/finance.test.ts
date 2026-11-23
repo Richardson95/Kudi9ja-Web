@@ -65,8 +65,8 @@ const S: PublicSettings = {
   switches: { savingsEnabled: true, lendingEnabled: true, thriftEnabled: true, maintenanceMode: false },
   security: { maxPasscodeAttempts: 5, lockTimeoutMinutes: 2, otpResendSeconds: 45, passcodeLength: 6, pinLength: 4 },
   company: {
-    legalName: 'Quadrilateral Technologies Limited',
-    rcNumber: 'RC 1657731',
+    legalName: 'Kudi9ja Limited',
+    rcNumber: 'RC 9405885',
     productName: 'Kudi9ja',
     supportEmail: 'support@kudi9ja.com',
     legalEmail: 'legal@kudi9ja.com',

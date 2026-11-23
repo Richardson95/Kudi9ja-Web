@@ -71,8 +71,8 @@ export default function LoanDetail() {
 
       {l.status === 'OVERDUE' && (
         <Notice tone="danger" title="This loan is overdue">
-          Pay what is due as soon as you can. Once the final due date has passed, a late charge of 0.18% of the amount you borrowed
-          ({naira(l.lateChargePerDay)}) is added every day until the loan is repaid in full. If something has changed, tell your loan
+          Pay what is due as soon as you can. Once the final due date has passed, a late charge of{' '}
+          {naira(l.lateChargePerDay)} is added every day until the loan is repaid in full. If something has changed, tell your loan
           officer or write to us from Help & complaints — we would rather agree a plan.
         </Notice>
       )}
@@ -136,7 +136,7 @@ export default function LoanDetail() {
               ['Total interest', naira(l.totalInterest)],
               l.totalRepaymentFees ? ['Transaction fees in all', naira(l.totalRepaymentFees)] : null,
               { label: 'Total to repay', value: naira(l.totalRepayable), bold: true },
-              l.lateCharges > 0 ? { label: 'Late charges (0.18% a day)', value: naira(l.lateCharges), tone: 'danger' } : null,
+              l.lateCharges > 0 ? { label: 'Late charges', value: naira(l.lateCharges), tone: 'danger' } : null,
               { label: 'Repaid so far', value: naira(l.amountRepaid), tone: 'success' },
               l.rebateGranted ? { label: 'Rebate', value: naira(l.rebateGranted), tone: 'success' } : null,
               l.settledAt ? ['Closed', asDay(l.settledAt)] : null,

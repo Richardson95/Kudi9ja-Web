@@ -34,8 +34,9 @@ export function LendingKeyFacts() {
           {feeRateLabel(l.repaymentFeeRate)} of each repayment, added to every instalment, weekly or monthly.
         </Fact>
         <Fact icon={<Ban />} title="Late charge after the final due date">
-          If any amount is still unpaid after your loan's final due date, 0.18% of the amount you borrowed is added every day until it is
-          repaid in full — ₦180 a day on ₦100,000.
+          If any amount is still unpaid after your loan's final due date, {ratePct((l.lateChargeDailyRate ?? 0.0018) * 100)} of the amount
+          you borrowed is added every day until it is repaid in full — {nairaFlat(Math.ceil(100000 * (l.lateChargeDailyRate ?? 0.0018)))} a
+          day on {nairaFlat(100000)}.
         </Fact>
         <Fact icon={<CalendarClock />} title="Pay off early any time">
           Clear a loan ahead of schedule whenever you like. You pay what is still owed, interest and transaction fees included — no discount,

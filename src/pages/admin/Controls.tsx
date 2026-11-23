@@ -31,6 +31,7 @@ const PERCENT: NumKey[] = [
   'loanRepaymentFeeRate',
   'groupLoanProcessingFeeRate',
   'groupLoanRepaymentFeeRate',
+  'lateChargeDailyRate',
 ];
 
 /** The standard loan settings and the loan-group copy, field by field. */
@@ -149,6 +150,12 @@ export default function Controls() {
           {num(k.threshold, 'Flat fee up to (₦)')}
           {num(k.feeRate, 'Management fee above that, of the loan')}
           {num(k.repayFee, 'Transaction fee on each repayment', 'Added to every instalment, weekly or monthly. Nothing but the management fee comes off a payout.')}
+          {set === 'standard' &&
+            num(
+              'lateChargeDailyRate',
+              'Late charge per day, of the loan',
+              'Added every day after the final due date until repaid, on every loan, standard and group, including running ones. The Lending Agreement states 0.18%: a different figure needs a new agreement version.',
+            )}
         </Grid>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {flag(k.weekly, 'Weekly repayment', 'Borrowers may choose to repay every week')}

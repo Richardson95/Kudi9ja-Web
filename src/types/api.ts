@@ -671,6 +671,8 @@ export interface LendingTerms {
   repaymentFeeRate: number;
   weeklyAllowed: boolean;
   monthlyAllowed: boolean;
+  /** Added every day after the final due date, as a fraction of the amount borrowed: 0.0018 for 0.18%. */
+  lateChargeDailyRate?: number;
 }
 
 export interface PublicSettings {
@@ -1211,6 +1213,8 @@ export interface PlatformSettings {
   processingFeeThreshold: Naira;
   loanProcessingFeeRate: number;
   loanRepaymentFeeRate: number;
+  /** Added every day after a loan's final due date, as a fraction of the amount borrowed: 0.0018 for 0.18%. All loans. */
+  lateChargeDailyRate: number;
   loanWeeklyAllowed: boolean;
   loanMonthlyAllowed: boolean;
   /** Group loans: their own copy of everything above. */
