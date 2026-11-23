@@ -388,6 +388,12 @@ export interface Loan {
   earlySettlementRebate: Naira;
   earlySettlementAmount: Naira;
   decisionReasons?: string;
+  /** Late charges added so far: 0.18% of the amount borrowed for each day past the final due date. */
+  lateCharges: Naira;
+  /** What each further day past the final due date adds. */
+  lateChargePerDay: Naira;
+  /** The total to repay plus the late charges. */
+  totalOwed: Naira;
 }
 
 export interface LoanQuote {
@@ -856,6 +862,8 @@ export interface BookLoanRow {
   purpose: string;
   disbursedAt?: ISODate;
   dueDate?: ISODate;
+  /** Late charges added so far: 0.18% of the loan for each day past the final due date. */
+  lateCharges: Naira;
 }
 
 export interface WalletHolderRow {
@@ -956,6 +964,7 @@ export interface AdminLoanRow {
   disbursedAt?: ISODate;
   dueDate?: ISODate;
   daysOverdue: number;
+  lateCharges: Naira;
 }
 
 export interface ImportedLoan {

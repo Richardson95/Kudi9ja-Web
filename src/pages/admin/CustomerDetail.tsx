@@ -299,6 +299,7 @@ function LoansTab({ id }: { id: string }) {
                 className="mt-4"
                 rows={[
                   ['Total to repay', naira(l.totalRepayable)],
+                  l.lateCharges > 0 ? { label: 'Late charges (0.18% a day)', value: naira(l.lateCharges), tone: 'danger' } : null,
                   { label: 'Repaid', value: naira(l.amountRepaid), tone: 'success' },
                   { label: 'Outstanding', value: naira(l.outstanding), bold: true },
                   l.nextInstallment ? ['Next due', `${naira(l.nextInstallment.outstanding)} on ${asDay(l.nextInstallment.dueDate)}`] : null,

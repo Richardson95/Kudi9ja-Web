@@ -36,6 +36,8 @@ export default function LoanDetail() {
   const l = loan.data;
   const open = isLoanOpen(l.status);
   const next = l.nextInstallment;
+  // Once every instalment is paid, what is left is late charges: pay those.
+  const payNow = next ? next.outstanding : l.outstanding;
   const value = parseAmount(amount);
   const balance = wallet.data?.balance ?? 0;
   const payLink = (n?: number) => `/app/wallet/add?loan=${l.id}${n ? `&amount=${Math.ceil(n)}` : ''}`;
@@ -69,7 +71,9 @@ export default function LoanDetail() {
 
       {l.status === 'OVERDUE' && (
         <Notice tone="danger" title="This loan is overdue">
-          Pay what is due as soon as you can. If something has changed, tell your loan officer or write to us from Help & complaints — we would rather agree a plan.
+          Pay what is due as soon as you can. Once the final due date has passed, a late charge of 0.18% of the amount you borrowed
+          ({naira(l.lateChargePerDay)}) is added every day until the loan is repaid in full. If something has changed, tell your loan
+          officer or write to us from Help & complaints — we would rather agree a plan.
         </Notice>
       )}
 
@@ -90,13 +94,18 @@ export default function LoanDetail() {
                 {next.daysUntilDue < 0 ? ` (${Math.abs(next.daysUntilDue)} days late)` : ''}
               </p>
             )}
+            {open && l.lateCharges > 0 && (
+              <p className="mt-1 text-sm text-danger">
+                Includes {naira(l.lateCharges)} in late charges · {naira(l.lateChargePerDay)} more each day until paid
+              </p>
+            )}
             {open && (
               <div className="mt-5 flex flex-wrap justify-center gap-2.5 sm:justify-start">
-                <Button to={payLink(next?.outstanding)} icon={<CreditCard className="h-4 w-4" />}>
-                  Pay {next ? naira(next.outstanding) : ''} with Paystack
+                <Button to={payLink(payNow)} icon={<CreditCard className="h-4 w-4" />}>
+                  Pay {payNow ? naira(payNow) : ''} with Paystack
                 </Button>
                 <Button variant="ghost" icon={<WalletIcon className="h-4 w-4" />} onClick={() => {
-                  setAmount(next ? formatAmountInput(String(Math.ceil(next.outstanding))) : '');
+                  setAmount(payNow ? formatAmountInput(String(Math.ceil(payNow))) : '');
                   setFromWallet(true);
                 }}>
                   From wallet
@@ -127,6 +136,7 @@ export default function LoanDetail() {
               ['Total interest', naira(l.totalInterest)],
               l.totalRepaymentFees ? ['Transaction fees in all', naira(l.totalRepaymentFees)] : null,
               { label: 'Total to repay', value: naira(l.totalRepayable), bold: true },
+              l.lateCharges > 0 ? { label: 'Late charges (0.18% a day)', value: naira(l.lateCharges), tone: 'danger' } : null,
               { label: 'Repaid so far', value: naira(l.amountRepaid), tone: 'success' },
               l.rebateGranted ? { label: 'Rebate', value: naira(l.rebateGranted), tone: 'success' } : null,
               l.settledAt ? ['Closed', asDay(l.settledAt)] : null,
