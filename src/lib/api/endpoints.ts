@@ -1,6 +1,7 @@
 import { DEVICE_LABEL } from '../../config';
 import { shrinkImage } from '../images';
 import type {
+  CreditCheck,
   AdminApplicationDetail,
   AdminApplicationRow,
   AdminClaim,
@@ -507,6 +508,11 @@ export const adminApi = {
   customerLoans: (id: string) => http.get<Loan[]>(`/admin/customers/${id}/loans`),
   /** The full BVN and NIN; the server logs every call as a data access. */
   customerIdentityNumbers: (id: string) => http.get<{ bvn?: string; nin?: string }>(`/admin/customers/${id}/identity-numbers`),
+  /** Credit bureau checks already made (free to read). */
+  customerCreditChecks: (id: string) =>
+    http.get<{ available: boolean; checks: CreditCheck[] }>(`/admin/customers/${id}/credit-checks`),
+  /** A fresh credit score by BVN; charged to the Dojah wallet and logged as a data access. */
+  runCreditCheck: (id: string) => http.post<CreditCheck>(`/admin/customers/${id}/credit-checks`),
   customerSignatures: (id: string) => http.get<SignatureRecord[]>(`/admin/customers/${id}/signatures`),
   customerLoanRecords: (id: string) => http.get<CustomerLoanRecords>(`/admin/customers/${id}/loan-records`),
   paystackPayments: (status?: PaystackStatus, page = 0, size = 50, customerId?: string) =>

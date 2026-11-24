@@ -164,6 +164,7 @@ export default function CustomerDetail() {
             />
           </Card>
           <div className="space-y-6">
+            <CreditScoreCard id={id} hasBvn={!!c.bvnLast4} />
             <OfficersPanel target={{ customerId: id }} />
             <GroupsCard id={id} />
             <Card>
@@ -224,6 +225,83 @@ function IdentityNumber({
         {value ? 'Hide' : 'Show'}
       </button>
     </span>
+  );
+}
+
+/**
+ * The customer's credit score from the bureaus, by BVN, through Dojah. Admin
+ * panel only. Reading past checks is free; "Check" fetches a new one, which is
+ * charged to the Dojah wallet, so it asks first.
+ */
+function CreditScoreCard({ id, hasBvn }: { id: string; hasBvn: boolean }) {
+  const { adminRole } = useSession();
+  const dialogs = useDialogs();
+  const qc = useQueryClient();
+  const { busy, run } = useAction();
+  const history = useCustomerQuery('credit-checks', id, () => adminApi.customerCreditChecks(id));
+  const latest = history.data?.checks[0];
+  const allowed = can.actOnLoans(adminRole) && hasBvn && history.data?.available;
+
+  const check = async () => {
+    const ok = await dialogs.confirm({
+      title: 'Check credit score?',
+      message: "Looks up the customer's BVN with the credit bureaus through Dojah. Each check is charged to the Dojah wallet.",
+      confirmLabel: 'Check',
+    });
+    if (ok && (await run(() => adminApi.runCreditCheck(id), 'Credit score updated'))) {
+      await qc.invalidateQueries({ queryKey: ['admin', 'customer', id, 'credit-checks'] });
+    }
+  };
+
+  const tone = (rating?: string | null) => {
+    const r = (rating ?? '').toUpperCase();
+    if (/(EXCELLENT|VERY GOOD|GOOD)/.test(r)) return 'success' as const;
+    if (/(POOR|BAD|LOW)/.test(r)) return 'danger' as const;
+    return 'gold' as const;
+  };
+
+  return (
+    <Card>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <SectionHeader title="Credit score" className="mb-0" />
+        {allowed && (
+          <Button size="sm" variant="outline" loading={busy} onClick={check}>
+            {latest ? 'Check again' : 'Check'}
+          </Button>
+        )}
+      </div>
+      {history.isLoading ? (
+        <Skeleton className="h-16" />
+      ) : !latest ? (
+        <p className="text-sm text-ink-2">
+          {!hasBvn
+            ? 'No BVN on file, so the credit score cannot be checked.'
+            : history.data && !history.data.available
+              ? 'Credit checks are not set up on the server yet.'
+              : 'Not checked yet.'}
+        </p>
+      ) : !latest.found ? (
+        <p className="text-sm text-ink-2">
+          The credit bureaus hold no record for this BVN. Checked {asDayTime(latest.checkedAt)} by {latest.checkedBy}.
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 flex items-baseline gap-3">
+            <span className="text-3xl font-extrabold">{latest.score ?? '—'}</span>
+            {latest.rating && <Pill tone={tone(latest.rating)}>{latest.rating}</Pill>}
+          </div>
+          <DetailRows
+            rows={[
+              ['Has loans', latest.hasLoans ?? '—'],
+              ['Loans in arrears', latest.delinquentFacilities != null ? formatNumber(latest.delinquentFacilities) : '—'],
+              ['Last reported', latest.lastReported ?? '—'],
+              ['Checked', `${asDayTime(latest.checkedAt)} by ${latest.checkedBy}`],
+            ]}
+          />
+          {latest.reasons && <p className="mt-3 text-[13px] text-ink-2">{latest.reasons}</p>}
+        </>
+      )}
+    </Card>
   );
 }
 

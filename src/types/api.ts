@@ -1284,6 +1284,21 @@ export interface AdminPaystackPayment extends PaystackPayment {
 
 // ── Signed agreements ───────────────────────────────────────────────────────
 
+/** One credit bureau check (Dojah, by BVN). Admin panel only. */
+export interface CreditCheck {
+  id: string;
+  checkedAt: string;
+  checkedBy: string;
+  /** False when the bureaus hold no record for the BVN. */
+  found: boolean;
+  score?: number | null;
+  rating?: string | null;
+  reasons?: string | null;
+  hasLoans?: string | null;
+  delinquentFacilities?: number | null;
+  lastReported?: string | null;
+}
+
 export interface SignatureRecord {
   id: string;
   typedName: string;
