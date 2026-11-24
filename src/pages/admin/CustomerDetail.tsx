@@ -165,6 +165,7 @@ export default function CustomerDetail() {
           </Card>
           <div className="space-y-6">
             <CreditScoreCard id={id} hasBvn={!!c.bvnLast4} />
+            <FaceCheckCard id={id} />
             <OfficersPanel target={{ customerId: id }} />
             <GroupsCard id={id} />
             <Card>
@@ -300,6 +301,32 @@ function CreditScoreCard({ id, hasBvn }: { id: string; hasBvn: boolean }) {
           />
           {latest.reasons && <p className="mt-3 text-[13px] text-ink-2">{latest.reasons}</p>}
         </>
+      )}
+    </Card>
+  );
+}
+
+const POSE_LABEL = { BLINK: 'Blink', TURN: 'Head turn', MOUTH: 'Open mouth' } as const;
+
+/** The three photos taken during the face check at sign-up. Any admin can see them. */
+function FaceCheckCard({ id }: { id: string }) {
+  const photos = useCustomerQuery('face-photos', id, () => adminApi.customerFacePhotos(id));
+  const items: DocItem[] = (photos.data ?? []).map((p) => ({
+    key: p.id,
+    label: POSE_LABEL[p.pose],
+    url: p.url,
+    contentType: 'image/jpeg',
+    date: p.capturedAt,
+  }));
+  return (
+    <Card>
+      <SectionHeader title="Face check" />
+      {photos.isLoading ? (
+        <Skeleton className="h-28 w-full" />
+      ) : items.length ? (
+        <DocumentGrid items={items} />
+      ) : (
+        <p className="text-sm text-ink-2">No face check photos. Accounts opened before the face check, or by the team, have none.</p>
       )}
     </Card>
   );

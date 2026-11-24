@@ -131,6 +131,9 @@ export const signupApi = {
     http.post<DraftResponse>(`/auth/signup/${draftId}/email`, { code }, { authenticated: false }),
   identity: (draftId: string, input: { bvn: string; nin: string; address: string; state: string }) =>
     http.post<DraftResponse>(`/auth/signup/${draftId}/identity`, input, { authenticated: false }),
+  /** The three face-check photos (JPEG data URLs). */
+  liveness: (draftId: string, input: { blink: string; turn: string; mouth: string }) =>
+    http.post<DraftResponse>(`/auth/signup/${draftId}/liveness`, input, { authenticated: false }),
   payout: (draftId: string, input: { bank: string; accountNumber: string }) =>
     http.post<DraftResponse>(`/auth/signup/${draftId}/payout`, input, { authenticated: false }),
   password: (draftId: string, input: { password: string; securityQuestion: string; securityAnswer: string }) =>
@@ -508,6 +511,9 @@ export const adminApi = {
   customerLoans: (id: string) => http.get<Loan[]>(`/admin/customers/${id}/loans`),
   /** The full BVN and NIN; the server logs every call as a data access. */
   customerIdentityNumbers: (id: string) => http.get<{ bvn?: string; nin?: string }>(`/admin/customers/${id}/identity-numbers`),
+  /** The three face-check photos from sign-up (blink, head turn, open mouth). */
+  customerFacePhotos: (id: string) =>
+    http.get<{ id: string; pose: 'BLINK' | 'TURN' | 'MOUTH'; capturedAt: string; url: string }[]>(`/admin/customers/${id}/face-photos`),
   /** Credit bureau checks already made (free to read). */
   customerCreditChecks: (id: string) =>
     http.get<{ available: boolean; checks: CreditCheck[] }>(`/admin/customers/${id}/credit-checks`),

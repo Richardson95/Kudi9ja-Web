@@ -49,7 +49,7 @@ export type NotifyKind =
   | 'GENERAL'
   | 'SUPPORT';
 export type AuditCategory = 'GENERAL' | 'SETTINGS' | 'TEAM' | 'CUSTOMER' | 'LOAN' | 'DATA_ACCESS' | 'COMPLIANCE';
-export type SignupStep = 'PERSONAL' | 'EMAIL_VERIFIED' | 'IDENTITY' | 'PAYOUT' | 'PASSWORD' | 'PASSCODE' | 'PIN' | 'COMPLETE';
+export type SignupStep = 'PERSONAL' | 'EMAIL_VERIFIED' | 'IDENTITY' | 'LIVENESS' | 'PAYOUT' | 'PASSWORD' | 'PASSCODE' | 'PIN' | 'COMPLETE';
 export type LegalKind = 'terms' | 'privacy' | 'lending';
 export type OtpPurpose = 'SIGNUP_EMAIL' | 'PASSWORD_RESET' | 'REACTIVATION' | 'PAYOUT_CHANGE' | 'ACCOUNT_CLOSURE';
 

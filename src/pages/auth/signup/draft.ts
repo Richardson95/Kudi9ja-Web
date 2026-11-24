@@ -69,6 +69,7 @@ export const STEP_TITLES = [
   'Your details',
   'Verify email',
   'Identity check',
+  'Face check',
   'Payout account',
   'Secure your account',
   'Sign-in passcode',

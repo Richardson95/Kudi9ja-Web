@@ -11,9 +11,10 @@ import { AgreementsStep, type SignedRecord } from './AgreementsStep';
 import { clearDraft, emptyDraft, loadDraft, saveDraft, STEP_TITLES, type SignupDraft } from './draft';
 import { CodeStep, EmailStep, IdentityStep, PasswordStep, PayoutStep, PersonalStep, ReviewStep } from './Steps';
 import { Welcome } from './Welcome';
+import { FaceCheckStep } from './FaceCheckStep';
 
 /**
- * Nine steps, each submitted to the server as it is finished rather than all
+ * Ten steps, each submitted to the server as it is finished rather than all
  * at the end — so an abandoned sign-up leaves a draft that expires, not a
  * half-made account. The last step is new on the web: read the agreements,
  * agree, and sign.
@@ -126,12 +127,13 @@ export default function Signup() {
           {step === 0 && <PersonalStep {...props} />}
           {step === 1 && <EmailStep {...props} />}
           {step === 2 && <IdentityStep {...props} />}
-          {step === 3 && <PayoutStep {...props} />}
-          {step === 4 && <PasswordStep {...props} />}
-          {step === 5 && <CodeStep {...props} mode="passcode" />}
-          {step === 6 && <CodeStep {...props} mode="pin" />}
-          {step === 7 && <ReviewStep {...props} />}
-          {step === 8 && <AgreementsStep {...props} onComplete={(session, record) => setDone({ session, record })} />}
+          {step === 3 && <FaceCheckStep {...props} />}
+          {step === 4 && <PayoutStep {...props} />}
+          {step === 5 && <PasswordStep {...props} />}
+          {step === 6 && <CodeStep {...props} mode="passcode" />}
+          {step === 7 && <CodeStep {...props} mode="pin" />}
+          {step === 8 && <ReviewStep {...props} />}
+          {step === 9 && <AgreementsStep {...props} onComplete={(session, record) => setDone({ session, record })} />}
 
           {step === 0 && (
             <p className="mt-8 text-center text-sm text-ink-2">
@@ -141,7 +143,7 @@ export default function Signup() {
               </Link>
             </p>
           )}
-          {step > 0 && step < 8 && (
+          {step > 0 && step < 9 && (
             <div className="mt-10 text-center">
               <Button variant="subtle" size="sm" onClick={restart}>
                 Start again with different details
