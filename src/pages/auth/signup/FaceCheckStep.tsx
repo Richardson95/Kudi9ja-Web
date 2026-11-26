@@ -25,8 +25,23 @@ const PROMPT: Record<Pose, string> = {
   TURN: 'Slowly turn your head to one side',
   MOUTH: 'Open your mouth wide',
 };
-/** Frames a movement must be held for, so a flicker is not counted. */
-const HOLD_FRAMES = 3;
+/**
+ * Frames a turn or open mouth must be held for, so a flicker is not counted.
+ * A blink needs only one frame: it lasts a tenth of a second, and a cheap
+ * phone may see only one frame of it.
+ */
+const HOLD_FRAMES = 2;
+/** After this long on one movement with a face in view, the customer may take the photo themselves. */
+const MANUAL_AFTER_MS = 20_000;
+
+type Point = { x: number; y: number };
+const gap = (a?: Point, b?: Point) => (a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0);
+/** Eye height over eye width, both eyes averaged. Falls when the eyes close. */
+const eyeOpenness = (lm: Point[]) => {
+  const left = gap(lm[159], lm[145]) / (gap(lm[33], lm[133]) || 1);
+  const right = gap(lm[386], lm[374]) / (gap(lm[362], lm[263]) || 1);
+  return (left + right) / 2;
+};
 
 type Phase = 'intro' | 'loading' | 'running' | 'passed' | 'error';
 
@@ -41,6 +56,8 @@ export function FaceCheckStep({ draft, next }: StepProps) {
   const [hint, setHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [canTakeManually, setCanTakeManually] = useState(false);
+  const manualRef = useRef<(() => void) | null>(null);
 
   const stop = useCallback(() => {
     cancelAnimationFrame(frameRef.current);
@@ -72,6 +89,7 @@ export function FaceCheckStep({ draft, next }: StepProps) {
     setError(null);
     setPhotos({});
     setIndex(0);
+    setCanTakeManually(false);
     setPhase('loading');
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -112,9 +130,35 @@ export function FaceCheckStep({ draft, next }: StepProps) {
     let step = 0;
     let held = 0;
     let centred = false;
-    let eyesOpenSeen = false;
+    let openBaseline = 0;
     let lastTime = -1;
+    let stepStarted = performance.now();
+    let faceInView = false;
     const taken: Partial<Record<Pose, string>> = {};
+
+    /** Keeps the photo for the current movement and moves on. Returns false when the check is finished. */
+    const advance = (): boolean => {
+      const pose = ORDER[step]!;
+      const shot = snapshot();
+      if (!shot) return true;
+      taken[pose] = shot;
+      setPhotos({ ...taken });
+      held = 0;
+      step += 1;
+      stepStarted = performance.now();
+      setCanTakeManually(false);
+      if (step >= ORDER.length) {
+        stop();
+        manualRef.current = null;
+        setPhase('passed');
+        return false;
+      }
+      setIndex(step);
+      return true;
+    };
+    manualRef.current = () => {
+      if (faceInView) advance();
+    };
 
     const loop = () => {
       const video = videoRef.current;
@@ -125,6 +169,7 @@ export function FaceCheckStep({ draft, next }: StepProps) {
         lastTime = now;
         const result = landmarker.detectForVideo(video, now);
         const faces = result.faceLandmarks.length;
+        faceInView = faces === 1;
         if (faces === 0) {
           setHint('We cannot see your face. Face the camera in good light.');
           held = 0;
@@ -133,6 +178,7 @@ export function FaceCheckStep({ draft, next }: StepProps) {
           held = 0;
         } else {
           setHint(null);
+          if (now - stepStarted > MANUAL_AFTER_MS) setCanTakeManually(true);
           const scores: Record<string, number> = {};
           for (const c of result.faceBlendshapes[0]?.categories ?? []) scores[c.categoryName] = c.score;
           const lm = result.faceLandmarks[0] ?? [];
@@ -140,37 +186,29 @@ export function FaceCheckStep({ draft, next }: StepProps) {
           const left = lm[234]?.x ?? 0;
           const right = lm[454]?.x ?? 1;
           const yaw = ((lm[1]?.x ?? 0.5) - left) / (right - left || 1);
-          const blink = Math.min(scores.eyeBlinkLeft ?? 0, scores.eyeBlinkRight ?? 0);
+          const blink = ((scores.eyeBlinkLeft ?? 0) + (scores.eyeBlinkRight ?? 0)) / 2;
+          const openness = eyeOpenness(lm);
           const jaw = scores.jawOpen ?? 0;
+          // Lip gap over face height, for when the jaw score runs low.
+          const lips = gap(lm[13], lm[14]) / (gap(lm[10], lm[152]) || 1);
 
           const pose = ORDER[step]!;
-          let doing = false;
+          let done = false;
           if (pose === 'BLINK') {
-            if (blink < 0.3) eyesOpenSeen = true;
-            doing = eyesOpenSeen && blink > 0.55;
+            // Measured against this person's own open eyes, so small eyes,
+            // glasses or a bright window behind them do not stop a real blink.
+            openBaseline = Math.max(openBaseline, openness);
+            done = openBaseline > 0 && (blink > 0.4 || openness < openBaseline * 0.6);
           } else if (pose === 'TURN') {
-            if (yaw > 0.4 && yaw < 0.6) centred = true;
-            doing = centred && (yaw < 0.28 || yaw > 0.72);
+            if (yaw > 0.38 && yaw < 0.62) centred = true;
+            held = centred && (yaw < 0.32 || yaw > 0.68) ? held + 1 : 0;
+            done = held >= HOLD_FRAMES;
           } else {
-            doing = jaw > 0.5;
+            held = jaw > 0.35 || lips > 0.06 ? held + 1 : 0;
+            done = held >= HOLD_FRAMES;
           }
 
-          held = doing ? held + 1 : 0;
-          if (held >= HOLD_FRAMES) {
-            const shot = snapshot();
-            if (shot) {
-              taken[pose] = shot;
-              setPhotos({ ...taken });
-            }
-            held = 0;
-            step += 1;
-            if (step >= ORDER.length) {
-              stop();
-              setPhase('passed');
-              return;
-            }
-            setIndex(step);
-          }
+          if (done && !advance()) return;
         }
       }
       frameRef.current = requestAnimationFrame(loop);
@@ -249,6 +287,11 @@ export function FaceCheckStep({ draft, next }: StepProps) {
         ))}
       </div>
 
+      {phase === 'running' && canTakeManually && (
+        <Button size="lg" block variant="outline" icon={<Camera />} onClick={() => manualRef.current?.()}>
+          Take the photo
+        </Button>
+      )}
       {phase === 'intro' && (
         <Button size="lg" block variant="outline" icon={<Camera />} onClick={start}>
           Start face check
