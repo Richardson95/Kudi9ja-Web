@@ -31,7 +31,7 @@ export const emptyDraft: SignupDraft = {
   securityQuestion: '',
 };
 
-const KEY = 'k9.signup';
+const KEY = 'k9.signup.v2'; // step numbers changed when the face check was switched off
 
 export function loadDraft(): { draft: SignupDraft; step: number } | null {
   try {
@@ -69,7 +69,7 @@ export const STEP_TITLES = [
   'Your details',
   'Verify email',
   'Identity check',
-  'Face check',
+  // 'Face check', // face check switched off for now
   'Payout account',
   'Secure your account',
   'Sign-in passcode',
