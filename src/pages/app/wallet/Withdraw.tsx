@@ -40,7 +40,7 @@ export default function Withdraw() {
       <div className="mx-auto max-w-xl">
         <PageHeader back="/app/wallet" backLabel="Wallet" title="Withdraw" />
         <Notice tone="gold" title="Add your bank account first" icon={<Landmark className="h-5 w-5" />}>
-          Withdrawals go only to an account in your own name.
+          {/* Withdrawals go only to an account in your own name. — name check switched off (2026-11-27) */}
           <div className="mt-3">
             <Button size="sm" to="/app/wallet/payout-account">
               Add account

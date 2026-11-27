@@ -359,9 +359,11 @@ export function PayoutStep({ draft, update, next }: StepProps) {
     >
       <Select label="Your bank" icon={<Building2 />} placeholder={banks.isLoading ? 'Loading banks…' : 'Choose your bank'} options={banks.data ?? []} value={draft.payoutBank} onChange={(e) => update({ payoutBank: e.target.value })} />
       <Input label="Account number" inputMode="numeric" maxLength={10} placeholder="10 digits" icon={<Hash />} value={draft.payoutAccountNumber} onChange={(e) => update({ payoutAccountNumber: e.target.value.replace(/\D/g, '') })} />
+      {/* Name check switched off (2026-11-27): any account is accepted.
       <Notice tone="gold" icon={<UserRound />} title="The account must be in your own name">
         We only pay out to {draft.fullName.trim() || 'the name on your Kudi9ja account'}. A payout to somebody else is refused, and the money stays in your wallet.
       </Notice>
+      */}
       <p className="text-[12.5px] leading-relaxed text-ink-3">You can change this later, from your profile, with a code we email you and your PIN.</p>
       {error && <Notice tone="danger">{error}</Notice>}
     </StepFrame>

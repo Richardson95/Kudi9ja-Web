@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Landmark, MailCheck } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
-import { Notice } from '../../../components/ui/Bits';
+// import { Notice } from '../../../components/ui/Bits'; // name check switched off
 import { Button } from '../../../components/ui/Button';
 import { Card, DetailRows } from '../../../components/ui/Card';
 import { useDialogs } from '../../../components/ui/Dialogs';
@@ -90,7 +90,9 @@ export default function PayoutAccount() {
           onChange={(e) => setAccount(e.target.value.replace(/\D/g, ''))}
           placeholder="10 digits"
         />
+        {/* Name check switched off (2026-11-27): any account is accepted.
         <Notice tone="neutral">The account must be in your own name: {profile.fullName}. We check it with the bank.</Notice>
+        */}
 
         {!codeSent ? (
           <Button block disabled={!valid} loading={busy} onClick={sendCode} icon={<MailCheck className="h-4 w-4" />}>
